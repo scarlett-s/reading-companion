@@ -29,7 +29,10 @@
 
 **AI 服务商**：主用 **DeepSeek**（OpenAI 兼容，`https://api.deepseek.com`，模型 `deepseek-chat`）；同一条通路兼容 Ollama（`http://localhost:11434/v1`，离线用）和 OpenAI。Anthropic 暂不在范围内。
 
-**图书元数据**：Open Library（免费、无需 Key）——`search.json` 按书名搜索（返回标题/作者/封面 ID），`covers.openlibrary.org` 取封面图；搜索不到的书可手动录入。
+**图书元数据**：中文书为主、英文书为辅。
+- 当前用 **Open Library**（免费、无需 Key，英文书覆盖更好）；中文书搜不到是已知问题。
+- 下一轮改为**中文优先**搜索源（Google Books 或豆瓣读书），Open Library 作为英文备选。
+- 都搜不到的书可手动录入。
 
 ## 3. Commands（命令）
 
