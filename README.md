@@ -1,56 +1,84 @@
-# Welcome to your Expo app 👋
+# 读书记录 App（Reading Companion）
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+一个轻量、离线优先的个人读书记录 App，在 **Mac（Web）和 iPhone/iOS** 上使用。
 
-## Get started
+## 功能
 
-1. Install dependencies
+- 记录每天读了哪本书、读了多少页（页数 或 百分比，Kindle 友好）
+- 每天读完后写一段评论，两种模式：
+  - **直接保存**：写完就存
+  - **Discuss**：AI 基于评论追问（最多 3 轮），结束后提炼要点一起保存
+- **整理思考**：读完一本书或中途随时，让 AI 汇总你对这本书的评论与讨论，整理成结构化的观点
+- **日历视图**：按天回看阅读记录
+- **图书搜索**：添加图书时按书名搜索（Open Library，带封面），搜不到可手动录入
+- 数据**只存本地**（SQLite），不依赖任何服务端
 
-   ```bash
-   npm install
-   ```
+## 运行
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 安装依赖
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Mac（Web 浏览器）
 
-### Other setup steps
+```bash
+npm run web:serve
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+然后浏览器打开 `http://localhost:8080`。
 
-## Learn more
+> 说明：本地数据（SQLite）在 Web 上走 WASM，需要跨源隔离头（COOP/COEP），上面的命令已自动加上。
 
-To learn more about developing your project with Expo, look at the following resources:
+开发模式（热更新，但 Web 端 SQLite 需上面的 `web:serve` 才有正确头）：
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npm run web
+```
 
-## Join the community
+### iPhone / iOS
 
-Join our community of developers creating universal apps.
+需要手机装 **Expo Go**，然后：
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm run ios
+```
+
+用 Expo Go 扫码即可。
+
+## 配置 AI
+
+Discuss 和「整理」功能需要 AI。打开 App 的 **设置** 页：
+
+- **DeepSeek**（推荐）：点「DeepSeek」预设，填入你的 API Key，模型 `deepseek-chat`
+- **Ollama**（本地，可离线）：点「Ollama（本地）」预设，本机装了 Ollama 即可，无需 Key
+
+## 测试与检查
+
+```bash
+npm test          # 单元测试（纯逻辑）
+npx tsc --noEmit  # 类型检查
+```
+
+## 技术栈
+
+Expo（React Native）+ TypeScript · expo-router · expo-sqlite · OpenAI 兼容 AI 接口（DeepSeek / Ollama）
+
+## 目录结构
+
+```
+src/
+  app/          → 页面（expo-router 文件路由）
+    (tabs)/     → 记录 / 日历 / 设置
+    book/       → 全部图书 / 搜索添加 / 图书详情
+    entry/      → 记录进度 / Discuss
+  types.ts      → 类型定义
+  db.ts         → SQLite 数据层
+  ai.ts         → AI 调用
+  utils.ts      → 纯工具函数
+  openlibrary.ts → 图书搜索
+__tests__/      → 单元测试
+```
+
+规格见 [SPEC.md](SPEC.md)，实施计划见 [tasks/plan.md](tasks/plan.md)。
