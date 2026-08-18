@@ -1,7 +1,13 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
+import { initDatabase } from '@/db';
 
 export default function RootLayout() {
+  useEffect(() => {
+    initDatabase().catch(console.error);
+  }, []);
+
   return (
     <>
       <StatusBar style="auto" />
