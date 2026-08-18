@@ -22,6 +22,7 @@ type Params = {
   currentPage?: string;
   progressPercent?: string;
   pagesRead?: string;
+  date?: string;
 };
 
 export default function DiscussScreen() {
@@ -94,7 +95,7 @@ export default function DiscussScreen() {
       await addEntry({
         id: generateId(),
         bookId: params.bookId ?? '',
-        date: todayString(),
+        date: params.date || todayString(),
         currentPage: params.currentPage ? Number(params.currentPage) : undefined,
         progressPercent: params.progressPercent ? Number(params.progressPercent) : undefined,
         pagesRead: params.pagesRead ? Number(params.pagesRead) : undefined,

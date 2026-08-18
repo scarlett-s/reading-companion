@@ -46,7 +46,7 @@ export default function BookSearchScreen() {
       createdAt: Date.now(),
     };
     await addBook(book);
-    router.replace({ pathname: '/book/[id]', params: { id: book.id } });
+    router.replace('/');
   }
 
   async function addManual() {
@@ -60,7 +60,7 @@ export default function BookSearchScreen() {
       createdAt: Date.now(),
     };
     await addBook(book);
-    router.replace({ pathname: '/book/[id]', params: { id: book.id } });
+    router.replace('/');
   }
 
   return (
