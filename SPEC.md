@@ -33,7 +33,7 @@
 **AI 服务商**：主用 **DeepSeek**（`deepseek-chat`），同通路兼容 Ollama（离线）和 OpenAI。Anthropic 暂不在范围内。
 
 **图书元数据**：中文书为主、英文书为辅。
-- **中文优先**搜索源：Google Books 或豆瓣读书（待定），Open Library 作为英文备选。
+- **中文优先**搜索源：**豆瓣读书**（已定，T17.1 待实现），Open Library 作为英文备选。
 - 都搜不到的书可手动录入。
 
 ---
