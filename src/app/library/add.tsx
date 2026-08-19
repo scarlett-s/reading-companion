@@ -6,7 +6,7 @@ import { addBook, generateId } from '@/db';
 import { Book } from '@/types';
 import BookCover from '@/components/BookCover';
 
-export default function BookSearchScreen() {
+export default function AddBookScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<BookSearchResult[]>([]);
@@ -47,7 +47,7 @@ export default function BookSearchScreen() {
       createdAt: Date.now(),
     };
     await addBook(book);
-    router.replace('/');
+    router.back();
   }
 
   async function addManual() {
@@ -62,7 +62,7 @@ export default function BookSearchScreen() {
       createdAt: Date.now(),
     };
     await addBook(book);
-    router.replace('/');
+    router.back();
   }
 
   return (

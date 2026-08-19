@@ -5,7 +5,7 @@ import Drawer, { DrawerItem } from '@/components/Drawer';
 
 const MENU: DrawerItem[] = [
   { label: '首页', path: '/' },
-  { label: '书库', path: '/book/list' },
+  { label: '书库', path: '/library' },
   { label: '统计', path: '/stats' },
   { label: '日历', path: '/calendar' },
   { label: '设置', path: '/settings' },

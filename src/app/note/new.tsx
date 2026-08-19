@@ -90,7 +90,7 @@ export default function NewNoteScreen() {
               <Text style={styles.dropdownAuthor}>{b.author}</Text>
             </Pressable>
           ))}
-          <Pressable style={styles.dropdownItem} onPress={() => router.push('/book/search')}>
+          <Pressable style={styles.dropdownItem} onPress={() => router.push('/library/add')}>
             <Text style={styles.addNew}>＋ 添加新图书</Text>
           </Pressable>
         </View>
