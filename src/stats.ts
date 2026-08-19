@@ -94,3 +94,22 @@ export function heatmapCells(
   }
   return cols;
 }
+
+export type PeriodKey = 'week' | 'month' | 'year';
+
+/** 计算周期（周/月/年）的起止日期，包含 today */
+export function periodRange(period: PeriodKey, today: string): { start: string; end: string } {
+  const [y, m] = today.split('-').map(Number);
+  if (period === 'year') {
+    return { start: `${y}-01-01`, end: `${y}-12-31` };
+  }
+  if (period === 'month') {
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const mm = String(m).padStart(2, '0');
+    return { start: `${y}-${mm}-01`, end: `${y}-${mm}-${String(last).padStart(2, '0')}` };
+  }
+  const todayDay = toDayNumber(today);
+  const weekday = (new Date(todayDay * 86400000).getUTCDay() + 6) % 7; // 0=周一
+  const monday = todayDay - weekday;
+  return { start: dayToDate(monday), end: dayToDate(monday + 6) };
+}
