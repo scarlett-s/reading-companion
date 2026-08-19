@@ -43,6 +43,7 @@ export default function BookSearchScreen() {
       pageCount: result.pageCount,
       coverUrl: result.coverUrl,
       status: 'reading',
+      readCount: 0,
       createdAt: Date.now(),
     };
     await addBook(book);
@@ -57,6 +58,7 @@ export default function BookSearchScreen() {
       author: mAuthor.trim() || '未知作者',
       pageCount: mPages ? Number(mPages) : undefined,
       status: 'reading',
+      readCount: 0,
       createdAt: Date.now(),
     };
     await addBook(book);

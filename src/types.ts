@@ -10,6 +10,8 @@ export interface Book {
   pageCount?: number;
   coverUrl?: string;
   status: 'reading' | 'finished';
+  readCount: number; // 已读完遍数，默认 0；「正在读第 x 遍」= readCount + 1
+  rating?: number; // 0–5，未评 undefined
   startedAt?: number;
   finishedAt?: number;
   createdAt: number;
@@ -31,8 +33,9 @@ export interface ReadingEntry {
   pagesRead?: number; // 本次读了多少页
   comment: string;
   mode: CommentMode;
-  aiKeyPoints?: string[]; // discuss 模式下 AI 提炼的关键信息
-  discussion?: DiscussionTurn[]; // discuss 对话记录
+  aiKeyPoints?: string[]; // 旧「提炼要点」，将被 aiSummary 取代
+  aiSummary?: string; // 苏格拉底对话结束时 AI 给的总结
+  discussion?: DiscussionTurn[]; // 对话记录
   createdAt: number;
 }
 

@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
-import { Book, ReadingEntry, Reflection, AISettings } from './types';
+import { Book, ReadingEntry, Reflection, AISettings, DiscussionTurn } from './types';
+import { planColumnMigrations } from './utils';
 
 type DB = Awaited<ReturnType<typeof SQLite.openDatabaseAsync>>;
 
@@ -17,7 +18,7 @@ export function generateId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** 建表（幂等） */
+/** 建表（幂等）+ 轻量迁移（老库补新列） */
 export async function initDatabase(): Promise<void> {
   const db = await getDb();
   await db.execAsync(`
@@ -31,6 +32,8 @@ export async function initDatabase(): Promise<void> {
       pageCount INTEGER,
       coverUrl TEXT,
       status TEXT NOT NULL DEFAULT 'reading',
+      readCount INTEGER NOT NULL DEFAULT 0,
+      rating INTEGER,
       startedAt INTEGER,
       finishedAt INTEGER,
       createdAt INTEGER NOT NULL
@@ -45,6 +48,7 @@ export async function initDatabase(): Promise<void> {
       comment TEXT NOT NULL,
       mode TEXT NOT NULL,
       aiKeyPoints TEXT,
+      aiSummary TEXT,
       discussion TEXT,
       createdAt INTEGER NOT NULL
     );
@@ -59,6 +63,21 @@ export async function initDatabase(): Promise<void> {
       value TEXT NOT NULL
     );
   `);
+
+  // 迁移：老库可能缺 readCount / rating / aiSummary 列
+  const bookCols = await db.getAllAsync<{ name: string }>('PRAGMA table_info(books);');
+  for (const stmt of planColumnMigrations('books', bookCols.map((c) => c.name), {
+    readCount: 'INTEGER NOT NULL DEFAULT 0',
+    rating: 'INTEGER',
+  })) {
+    await db.execAsync(stmt);
+  }
+  const entryCols = await db.getAllAsync<{ name: string }>('PRAGMA table_info(entries);');
+  for (const stmt of planColumnMigrations('entries', entryCols.map((c) => c.name), {
+    aiSummary: 'TEXT',
+  })) {
+    await db.execAsync(stmt);
+  }
 }
 
 // ===== 图书 =====
@@ -77,8 +96,8 @@ export async function addBook(book: Book): Promise<void> {
   const db = await getDb();
   await db.runAsync(
     `INSERT OR REPLACE INTO books
-       (id, title, author, publisher, publishYear, isbn, pageCount, coverUrl, status, startedAt, finishedAt, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+       (id, title, author, publisher, publishYear, isbn, pageCount, coverUrl, status, readCount, rating, startedAt, finishedAt, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     book.id,
     book.title,
     book.author,
@@ -88,6 +107,8 @@ export async function addBook(book: Book): Promise<void> {
     book.pageCount ?? null,
     book.coverUrl ?? null,
     book.status ?? 'reading',
+    book.readCount ?? 0,
+    book.rating ?? null,
     book.startedAt ?? null,
     book.finishedAt ?? null,
     book.createdAt
@@ -110,6 +131,22 @@ export async function updateBookStatus(
   await db.runAsync('UPDATE books SET status = ?, finishedAt = ? WHERE id = ?;', status, finishedAt ?? null, id);
 }
 
+/** 标记读完：status→finished、finishedAt、readCount++（一遍读完） */
+export async function markFinished(bookId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    "UPDATE books SET status = 'finished', finishedAt = ?, readCount = readCount + 1 WHERE id = ?;",
+    Date.now(),
+    bookId
+  );
+}
+
+/** 设置/更新 5 星评级（0–5） */
+export async function setBookRating(bookId: string, rating: number): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('UPDATE books SET rating = ? WHERE id = ?;', rating, bookId);
+}
+
 /** 最近读过的书（有阅读记录），按最近记录时间降序，取前 limit 本 */
 export async function getRecentBooks(limit: number): Promise<Book[]> {
   const db = await getDb();
@@ -130,8 +167,8 @@ export async function addEntry(entry: ReadingEntry): Promise<void> {
   const db = await getDb();
   await db.runAsync(
     `INSERT OR REPLACE INTO entries
-       (id, bookId, date, currentPage, progressPercent, pagesRead, comment, mode, aiKeyPoints, discussion, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+       (id, bookId, date, currentPage, progressPercent, pagesRead, comment, mode, aiKeyPoints, aiSummary, discussion, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     entry.id,
     entry.bookId,
     entry.date,
@@ -141,6 +178,7 @@ export async function addEntry(entry: ReadingEntry): Promise<void> {
     entry.comment,
     entry.mode,
     entry.aiKeyPoints ? JSON.stringify(entry.aiKeyPoints) : null,
+    entry.aiSummary ?? null,
     entry.discussion ? JSON.stringify(entry.discussion) : null,
     entry.createdAt
   );
@@ -171,6 +209,39 @@ export async function getEntriesByMonth(yearMonth: string): Promise<ReadingEntry
     `${yearMonth}%`
   );
   return rows.map(parseEntry);
+}
+
+/** 按日期范围（含两端，YYYY-MM-DD 字典序 = 时间序）取记录 */
+export async function getEntriesByDateRange(start: string, end: string): Promise<ReadingEntry[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<ReadingEntryRow>(
+    'SELECT * FROM entries WHERE date >= ? AND date <= ? ORDER BY date ASC, createdAt ASC;',
+    start,
+    end
+  );
+  return rows.map(parseEntry);
+}
+
+/** 一本书的笔记条数（判断是否 >5，触发洞察报告） */
+export async function countEntriesByBook(bookId: string): Promise<number> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) AS c FROM entries WHERE bookId = ?;', bookId);
+  return row?.c ?? 0;
+}
+
+/** 苏格拉底对话结束后写回：对话记录 + AI 总结 */
+export async function updateEntryDiscussion(
+  entryId: string,
+  discussion: DiscussionTurn[],
+  aiSummary: string
+): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    'UPDATE entries SET discussion = ?, aiSummary = ? WHERE id = ?;',
+    JSON.stringify(discussion),
+    aiSummary,
+    entryId
+  );
 }
 
 // ===== 整理 =====
@@ -225,6 +296,7 @@ interface ReadingEntryRow {
   comment: string;
   mode: 'plain' | 'discuss';
   aiKeyPoints: string | null;
+  aiSummary: string | null;
   discussion: string | null;
   createdAt: number;
 }
@@ -240,6 +312,7 @@ function parseEntry(row: ReadingEntryRow): ReadingEntry {
     comment: row.comment,
     mode: row.mode,
     aiKeyPoints: row.aiKeyPoints ? JSON.parse(row.aiKeyPoints) : undefined,
+    aiSummary: row.aiSummary ?? undefined,
     discussion: row.discussion ? JSON.parse(row.discussion) : undefined,
     createdAt: row.createdAt,
   };

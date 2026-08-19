@@ -42,3 +42,20 @@ export function parseKeyPoints(text: string): string[] {
     .map((s) => s.replace(/^\s*(?:\d+[\.、\)]|[-•*])\s*/, '').trim())
     .filter((s) => s.length > 0);
 }
+
+/**
+ * 纯函数：根据已有列，生成缺失列的 ALTER TABLE 语句。
+ * 用于老库迁移（补 readCount / rating / aiSummary 等新列）。
+ */
+export function planColumnMigrations(
+  table: string,
+  existing: string[],
+  desired: Record<string, string>
+): string[] {
+  const have = new Set(existing);
+  const out: string[] = [];
+  for (const [col, def] of Object.entries(desired)) {
+    if (!have.has(col)) out.push(`ALTER TABLE ${table} ADD COLUMN ${col} ${def};`);
+  }
+  return out;
+}
