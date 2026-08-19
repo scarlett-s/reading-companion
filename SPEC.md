@@ -54,35 +54,29 @@ Web 双击启动：        ./启动读书记录.command
 
 ```
 src/
-  app/                          → expo-router 页面（文件即路由）
-    _layout.tsx                 → 根布局（Stack）
-    (drawer)/_layout.tsx        → 抽屉壳子（自实现，左滑 / 汉堡打开）
-    index.tsx                   → 首页：笔记瀑布流 + 悬浮绿色「＋」
-    note/new.tsx                → 新增笔记弹窗（底部上拉）：书名/进度/笔记 + 「提交」/「与 AI 聊天」
-    note/chat/[entryId].tsx     → 苏格拉底 AI 对话页
-    library/index.tsx           → 我的书库（库内搜索 + 「最近在读」/「我的书库」分组 + 「＋」卡）
-    library/add.tsx             → 添加图书（外部搜索 + 「添加图书」+ 手动录入）
-    library/[id].tsx            → 图书详情（封面/5星/heat map/信息卡/笔记列表/洞察报告/导出/标记读完）
-    stats/index.tsx             → 统计页（周/月/年 + 横条图 + 热力图）
-    calendar/index.tsx          → 日历视图
-    settings/index.tsx          → 设置（AI 配置）
-  types.ts                      → 类型定义
-  db.ts                         → SQLite 数据层（建表 + CRUD + 迁移）
-  ai.ts                         → AI 调用（苏格拉底 / 总结 / 洞察）
-  stats.ts                      → 纯统计函数（天数/周期/进度增量）
-  export.ts                     → 笔记导出（Markdown / 纯文本 / HTML）
-  utils.ts                      → 纯工具（日期、进度、解析）
-  components/
-    Drawer.tsx                  → 自实现左滑抽屉
-    NoteCard.tsx                → 笔记卡片（瀑布流单卡）
-    HeatMap.tsx                 → 热力图（53×7）
-    BarChart.tsx                → 横条图
-    BookCover.tsx               → 封面图（带占位）
-    StarRating.tsx              → 5 星评级
-__tests__/                      → 单测（utils / ai / stats / export）
+  app/                              → expo-router 页面（文件即路由）
+    _layout.tsx                     → 根布局（Stack）
+    (drawer)/_layout.tsx            → 抽屉壳子（自实现，左滑 / 汉堡打开）
+    (drawer)/index.tsx              → 首页：笔记瀑布流 + 悬浮绿色「＋」
+    (drawer)/library/index.tsx      → 我的书库（库内搜索 + 「最近在读」/「我的书库」分组 + 「＋」卡）
+    (drawer)/stats/index.tsx        → 统计页（周/月/年 + 横条图 + 热力图）
+    (drawer)/calendar.tsx           → 日历视图
+    (drawer)/settings.tsx           → 设置（AI 配置 + 全部导出）
+    library/add.tsx                 → 添加图书（外部搜索 + 手动录入）
+    library/[id].tsx                → 图书详情（封面/5星/heat map/信息卡/笔记列表/洞察报告/导出/标记读完）
+    note/new.tsx                    → 新增笔记弹窗（底部上拉）
+    note/chat/[entryId].tsx         → 苏格拉底 AI 对话页
+  types.ts                          → 类型定义
+  db.ts                             → SQLite 数据层（建表 + CRUD + 迁移）
+  ai.ts                             → AI 调用（苏格拉底 / 总结 / 洞察）
+  stats.ts                          → 纯统计函数（天数/周期/进度增量/热力图）
+  export.ts                         → 笔记导出（Markdown / 纯文本 / HTML）
+  share.ts                          → 平台分享/下载
+  utils.ts                          → 纯工具（日期、进度、解析）
+  openlibrary.ts                    → 图书搜索（Open Library）
+  components/                       → Drawer / NoteCard / HeatMap / BarChart / BookCover / StarRating / ExportButtons
+__tests__/                          → 单测（utils / ai / stats / export / period / migration）
 ```
-
----
 
 ## 5. Code Style（代码风格）
 
