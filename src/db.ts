@@ -326,3 +326,10 @@ export async function getAllEntries(): Promise<ReadingEntry[]> {
   );
   return rows.map(parseEntry);
 }
+
+/** 按 id 取单条笔记 */
+export async function getEntry(id: string): Promise<ReadingEntry | null> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<ReadingEntryRow>('SELECT * FROM entries WHERE id = ?;', id);
+  return row ? parseEntry(row) : null;
+}

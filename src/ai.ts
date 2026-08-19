@@ -1,5 +1,4 @@
 import { AISettings, DiscussionTurn } from './types';
-import { parseKeyPoints } from './utils';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -29,7 +28,7 @@ async function chat(settings: AISettings, messages: ChatMessage[], maxTokens = 5
   return data.choices?.[0]?.message?.content ?? '';
 }
 
-// ===== 苏格拉底式提问（Phase 2） =====
+// ===== 苏格拉底式提问 =====
 
 /** 构建苏格拉底式提问的提示词：四阶段 + 六类问题，一次一问，AI 判断结束，上限 10 轮 */
 export function buildSocraticMessages(
@@ -142,62 +141,4 @@ export async function synthesizeBook(
   entries: { comment: string; aiKeyPoints?: string[]; aiSummary?: string }[]
 ): Promise<string> {
   return chat(settings, buildSynthesizeMessages(bookTitle, entries), 800);
-}
-
-// ===== 旧 discuss 模式（T16 移除） =====
-
-export function buildQuestionMessages(
-  comment: string,
-  history: DiscussionTurn[],
-  bookTitle: string
-): ChatMessage[] {
-  const historyText = history
-    .map((t) => `${t.role === 'assistant' ? '你问' : '我答'}：${t.text}`)
-    .join('\n');
-  return [
-    {
-      role: 'system',
-      content: `你是一位细心的读书伙伴。用户刚读完《${bookTitle}》并写了一条评论。请基于评论提出一个开放式问题，帮助用户深入思考。问题要简短（不超过 40 字），一次只问一个。`,
-    },
-    {
-      role: 'user',
-      content: `我的评论：${comment}\n${historyText ? `之前的问答：\n${historyText}\n` : ''}请提出下一个问题。`,
-    },
-  ];
-}
-
-export function buildExtractMessages(comment: string, discussion: DiscussionTurn[]): ChatMessage[] {
-  const discussionText = discussion
-    .map((t) => `${t.role === 'assistant' ? '问' : '答'}：${t.text}`)
-    .join('\n');
-  return [
-    {
-      role: 'system',
-      content: '请从用户的读书评论和后续讨论中提炼出 2-4 条关键观点/思考。每条简短（不超过 30 字），逐行输出，不要编号。',
-    },
-    {
-      role: 'user',
-      content: `评论：${comment}\n\n讨论：\n${discussionText}\n\n请提炼关键信息。`,
-    },
-  ];
-}
-
-/** discuss 模式：基于评论 + 历史生成一个追问 */
-export async function generateQuestion(
-  settings: AISettings,
-  comment: string,
-  history: DiscussionTurn[],
-  bookTitle: string
-): Promise<string> {
-  return chat(settings, buildQuestionMessages(comment, history, bookTitle), 100);
-}
-
-/** 从评论 + 讨论中提炼关键信息（列表） */
-export async function extractKeyPoints(
-  settings: AISettings,
-  comment: string,
-  discussion: DiscussionTurn[]
-): Promise<string[]> {
-  const text = await chat(settings, buildExtractMessages(comment, discussion), 300);
-  return parseKeyPoints(text);
 }

@@ -1,35 +1,10 @@
 import { describe, it, expect } from '@jest/globals';
 import {
-  buildQuestionMessages,
-  buildExtractMessages,
   buildSynthesizeMessages,
   buildSocraticMessages,
   buildSocraticSummaryMessages,
   isSocraticEnd,
 } from '../src/ai';
-
-describe('buildQuestionMessages（旧）', () => {
-  it('包含评论与书名，系统提示要求一次只问一个', () => {
-    const msgs = buildQuestionMessages('今天读得很好', [], '三体');
-    expect(msgs[0].role).toBe('system');
-    expect(msgs[0].content).toContain('三体');
-    expect(msgs[1].content).toContain('今天读得很好');
-  });
-
-  it('有历史时带上之前的问答', () => {
-    const history = [{ role: 'assistant' as const, text: '你喜欢主角吗？' }];
-    const msgs = buildQuestionMessages('评论', history, '书');
-    expect(msgs[1].content).toContain('你问：你喜欢主角吗？');
-  });
-});
-
-describe('buildExtractMessages（旧）', () => {
-  it('包含评论与讨论', () => {
-    const msgs = buildExtractMessages('评论', [{ role: 'user' as const, text: '回答' }]);
-    expect(msgs[1].content).toContain('评论');
-    expect(msgs[1].content).toContain('答：回答');
-  });
-});
 
 describe('buildSynthesizeMessages（洞察报告）', () => {
   it('含书名 + 要点/总结 + 字数限制', () => {
