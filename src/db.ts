@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { Book, ReadingEntry, Reflection, AISettings, DiscussionTurn } from './types';
+import { Book, ReadingEntry, Reflection, AISettings, DiscussionTurn, CommentMode } from './types';
 import { planColumnMigrations } from './utils';
 
 type DB = Awaited<ReturnType<typeof SQLite.openDatabaseAsync>>;
@@ -294,7 +294,7 @@ interface ReadingEntryRow {
   progressPercent: number | null;
   pagesRead: number | null;
   comment: string;
-  mode: 'plain' | 'discuss';
+  mode: CommentMode;
   aiKeyPoints: string | null;
   aiSummary: string | null;
   discussion: string | null;

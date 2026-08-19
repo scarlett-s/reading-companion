@@ -17,7 +17,7 @@ export interface Book {
   createdAt: number;
 }
 
-export type CommentMode = 'plain' | 'discuss';
+export type CommentMode = 'plain' | 'chat' | 'discuss'; // 'discuss' 过渡，T16 移除
 
 export interface DiscussionTurn {
   role: 'assistant' | 'user';
