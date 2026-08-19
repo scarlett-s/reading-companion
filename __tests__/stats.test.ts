@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { daysWithEntries, readingSpanDays, daysSince, entryProgress, periodDelta } from '@/stats';
+import { daysWithEntries, readingSpanDays, daysSince, entryProgress, periodDelta, heatmapCells, dayToDate } from '@/stats';
 import { ReadingEntry } from '@/types';
 
 function entry(date: string, opts?: { progressPercent?: number; currentPage?: number }): ReadingEntry {
@@ -90,5 +90,25 @@ describe('periodDelta', () => {
       entry('2026-02-10', { progressPercent: 30 }),
     ];
     expect(periodDelta(entries, period[0], period[1])).toBe(-30);
+  });
+});
+
+describe('heatmapCells', () => {
+  it('以周为列、每列 7 格', () => {
+    const cols = heatmapCells({}, 4, '2026-01-31');
+    expect(cols).toHaveLength(4);
+    for (const col of cols) expect(col).toHaveLength(7);
+  });
+
+  it('按日期填充 count', () => {
+    const cols = heatmapCells({ '2026-01-31': 3 }, 1, '2026-01-31');
+    const cell = cols.flat().find((c) => c.date === '2026-01-31');
+    expect(cell?.count).toBe(3);
+  });
+});
+
+describe('dayToDate', () => {
+  it('epoch 0 → 1970-01-01', () => {
+    expect(dayToDate(0)).toBe('1970-01-01');
   });
 });

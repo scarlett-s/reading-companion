@@ -56,3 +56,41 @@ export function periodDelta(
 
   return end - base;
 }
+
+/** dayNumber → 'YYYY-MM-DD'（UTC） */
+export function dayToDate(day: number): string {
+  const d = new Date(day * 86400000);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dayStr = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${dayStr}`;
+}
+
+export interface HeatCell {
+  date: string;
+  count: number;
+}
+
+/** 生成热力图格子：以「周」为列（周一开头），每周 7 格 */
+export function heatmapCells(
+  data: Record<string, number>,
+  weeks: number,
+  endDate: string
+): HeatCell[][] {
+  const endDay = toDayNumber(endDate);
+  const total = weeks * 7;
+  const endWeekday = (new Date(endDay * 86400000).getUTCDay() + 6) % 7; // 0=周一
+  const endSunday = endDay + (6 - endWeekday); // 向上取整到周日
+  const alignedStart = endSunday - total + 1;
+  const cols: HeatCell[][] = [];
+  for (let w = 0; w < weeks; w++) {
+    const col: HeatCell[] = [];
+    for (let d = 0; d < 7; d++) {
+      const day = alignedStart + w * 7 + d;
+      const date = dayToDate(day);
+      col.push({ date, count: data[date] ?? 0 });
+    }
+    cols.push(col);
+  }
+  return cols;
+}

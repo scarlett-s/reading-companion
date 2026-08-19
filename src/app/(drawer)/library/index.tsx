@@ -27,7 +27,7 @@ export default function LibraryScreen() {
   }, [query, books]);
 
   function openBook(id: string) {
-    router.push({ pathname: '/book/[id]', params: { id } });
+    router.push({ pathname: '/library/[id]', params: { id } });
   }
 
   return (

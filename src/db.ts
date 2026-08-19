@@ -182,6 +182,9 @@ export async function addEntry(entry: ReadingEntry): Promise<void> {
     entry.discussion ? JSON.stringify(entry.discussion) : null,
     entry.createdAt
   );
+
+  // 读完后再记录 → 自动进入下一遍（回翻 status 到 reading）
+  await db.runAsync("UPDATE books SET status = 'reading' WHERE id = ? AND status = 'finished';", entry.bookId);
 }
 
 export async function getEntriesByBook(bookId: string): Promise<ReadingEntry[]> {
