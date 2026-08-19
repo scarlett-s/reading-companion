@@ -19,6 +19,8 @@ import { Book, ReadingEntry, Reflection } from '@/types';
 import BookCover from '@/components/BookCover';
 import StarRating from '@/components/StarRating';
 import HeatMap from '@/components/HeatMap';
+import ExportButtons from '@/components/ExportButtons';
+import { bookToMarkdown, markdownToPlainText, markdownToHtml } from '@/export';
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -155,6 +157,17 @@ export default function BookDetailScreen() {
           <Text style={styles.reflectionContent}>{r.content}</Text>
         </View>
       ))}
+
+      <Text style={styles.sectionTitle}>导出笔记</Text>
+      <ExportButtons
+        filename={book.title}
+        getContent={(format) => {
+          const md = bookToMarkdown(book, entries);
+          if (format === 'md') return md;
+          if (format === 'html') return markdownToHtml(md);
+          return markdownToPlainText(md);
+        }}
+      />
 
       <Text style={styles.sectionTitle}>笔记（{entries.length}）</Text>
       {entries.length === 0 ? (

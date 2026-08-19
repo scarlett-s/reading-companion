@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { getSettings, saveSetting } from '@/db';
-import { AISettings } from '@/types';
+import { getSettings, saveSetting, getAllBooks, getAllEntries } from '@/db';
+import { allBooksToMarkdown, markdownToPlainText, markdownToHtml } from '@/export';
+import { AISettings, Book, ReadingEntry } from '@/types';
+import ExportButtons from '@/components/ExportButtons';
 
 const DEEPSEEK: AISettings = { baseUrl: 'https://api.deepseek.com', apiKey: '', model: 'deepseek-chat' };
 const OLLAMA: AISettings = { baseUrl: 'http://localhost:11434/v1', apiKey: '', model: 'llama3' };
@@ -9,9 +11,17 @@ const OLLAMA: AISettings = { baseUrl: 'http://localhost:11434/v1', apiKey: '', m
 export default function SettingsScreen() {
   const [settings, setSettings] = useState<AISettings>({ baseUrl: '', apiKey: '', model: '' });
   const [saved, setSaved] = useState(false);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [entriesByBook, setEntriesByBook] = useState<Record<string, ReadingEntry[]>>({});
 
   useEffect(() => {
     getSettings().then((s) => setSettings((prev) => ({ ...prev, ...s })));
+    Promise.all([getAllBooks(), getAllEntries()]).then(([bs, es]) => {
+      setBooks(bs);
+      const map: Record<string, ReadingEntry[]> = {};
+      for (const e of es) (map[e.bookId] ??= []).push(e);
+      setEntriesByBook(map);
+    });
   }, []);
 
   function set<K extends keyof AISettings>(key: K, value: string) {
@@ -34,7 +44,7 @@ export default function SettingsScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>AI 配置</Text>
       <Text style={styles.hint}>
-        Discuss 与「整理」需要 AI。DeepSeek 需填 API Key；Ollama 本地可离线、无需 Key。
+        「与 AI 聊天」与「洞察报告」需要 AI。DeepSeek 需填 API Key；Ollama 本地可离线、无需 Key。
       </Text>
 
       <View style={styles.presetRow}>
@@ -64,6 +74,17 @@ export default function SettingsScreen() {
       <Pressable style={styles.saveBtn} onPress={save}>
         <Text style={styles.saveText}>{saved ? '已保存 ✓' : '保存'}</Text>
       </Pressable>
+
+      <Text style={styles.sectionTitle}>导出全部笔记</Text>
+      <ExportButtons
+        filename="全部笔记"
+        getContent={(format) => {
+          const md = allBooksToMarkdown(books, entriesByBook);
+          if (format === 'md') return md;
+          if (format === 'html') return markdownToHtml(md);
+          return markdownToPlainText(md);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -135,4 +156,5 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 8 },
 });
