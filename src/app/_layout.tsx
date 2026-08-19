@@ -12,11 +12,12 @@ export default function RootLayout() {
     <>
       <StatusBar style="auto" />
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
         <Stack.Screen name="book/list" options={{ title: '全部图书' }} />
         <Stack.Screen name="book/search" options={{ title: '添加图书' }} />
         <Stack.Screen name="book/[id]" options={{ title: '图书详情' }} />
         <Stack.Screen name="entry/discuss" options={{ title: 'Discuss' }} />
+        <Stack.Screen name="note/new" options={{ title: '新增笔记' }} />
       </Stack>
     </>
   );

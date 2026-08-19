@@ -317,3 +317,12 @@ function parseEntry(row: ReadingEntryRow): ReadingEntry {
     createdAt: row.createdAt,
   };
 }
+
+/** 全部笔记，按日期 + 创建时间倒序（首页瀑布流用） */
+export async function getAllEntries(): Promise<ReadingEntry[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<ReadingEntryRow>(
+    'SELECT * FROM entries ORDER BY date DESC, createdAt DESC;'
+  );
+  return rows.map(parseEntry);
+}
