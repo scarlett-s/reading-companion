@@ -19,6 +19,8 @@ export interface NoteMenuProps {
   visible: boolean;
   /** 「…」图标在屏幕上的位置（由父页面 measure 得到） */
   anchor?: { x: number; y: number; w: number; h: number } | null;
+  /** 笔记卡片屏幕右边缘位置（用卡片容器 measure 得到）；用于菜单右对齐到卡片 */
+  cardRight?: number;
   onClose: () => void;
   onChanged?: () => void;
 }
@@ -30,7 +32,7 @@ const GAP = 6;
  * 笔记「…」菜单弹窗：靠近图标（默认向左下展开），宽度 ≈ 屏幕 2/3，与卡片右对齐；
  * 若图标靠下空间不足则向左上展开；保证弹窗在屏幕内完整可见。
  */
-export default function NoteMenu({ entry, visible, anchor, onClose, onChanged }: NoteMenuProps) {
+export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, onChanged }: NoteMenuProps) {
   const router = useRouter();
   const [view, setView] = useState<'menu' | 'links'>('menu');
   const [others, setOthers] = useState<ReadingEntry[]>([]);
@@ -114,8 +116,9 @@ export default function NoteMenu({ entry, visible, anchor, onClose, onChanged }:
   } else {
     top = safeTop + 40;
   }
-  // 与笔记卡片右对齐：弹窗右边对齐卡片右边 = anchor.x + anchor.w - PANEL_WIDTH
-  const left = anchor ? anchor.x + anchor.w - PANEL_WIDTH : win.width - PANEL_WIDTH - 16;
+  // 与笔记卡片右对齐：弹窗右边对齐卡片右边
+  const rightEdge = cardRight ?? (anchor ? anchor.x + anchor.w : win.width - 16);
+  const left = rightEdge - PANEL_WIDTH;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

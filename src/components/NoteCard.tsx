@@ -13,6 +13,11 @@ export interface NoteCardProps {
   onPressBook: () => void;
   onOpenMenu: (anchorRef: React.RefObject<View | null>) => void;
   onPressAI: () => void;
+  /** 父页面持有「展开/收起」文字 ref，用于滚动时测量是否在屏幕内 */
+  registerExpandTextRef?: (id: string, ref: React.RefObject<View | null>) => void;
+  /** 父页面持有卡片根 ref，用于测出卡片右边界，让编辑弹窗严格右对齐 */
+  registerCardRef?: (id: string, ref: React.RefObject<View | null>) => void;
+  cardId: string;
 }
 
 export default function NoteCard({
@@ -27,10 +32,20 @@ export default function NoteCard({
   onPressBook,
   onOpenMenu,
   onPressAI,
+  registerExpandTextRef,
+  registerCardRef,
+  cardId,
 }: NoteCardProps) {
   const long = comment.length > 80 || comment.includes('\n');
   const menuRef = useRef<View>(null);
+  const expandTextRef = useRef<View>(null);
+  const cardRef = useRef<View>(null);
+
   return (
+    <View
+      ref={cardRef}
+      onLayout={() => registerCardRef?.(cardId, cardRef)}
+      collapsable={false}>
     <Pressable style={styles.card} onPress={onToggleExpand}>
       <View style={styles.head}>
         <View style={styles.headLeft}>
@@ -65,19 +80,30 @@ export default function NoteCard({
 
       <View style={styles.footerRow}>
         {long ? (
-          <Pressable onPress={onToggleExpand} hitSlop={6}>
-            <Text style={styles.expandText}>{expanded ? '收起' : '展开'}</Text>
-          </Pressable>
+          <View ref={expandTextRef} onLayout={() => registerExpandTextRef?.(cardId, expandTextRef)}>
+            <Pressable onPress={onToggleExpand} hitSlop={6}>
+              <Text style={styles.expandText}>{expanded ? '收起' : '展开'}</Text>
+            </Pressable>
+          </View>
         ) : (
           <View />
         )}
-        <Pressable onPress={onPressAI} disabled={!hasAI} hitSlop={6}>
-          <View style={[styles.aiBadge, hasAI ? styles.aiActive : styles.aiInactive]}>
-            <Text style={styles.aiText}>AI</Text>
+        {hasAI ? (
+          <Pressable onPress={onPressAI} hitSlop={6} style={styles.aiWrap}>
+            <View style={[styles.aiBadge, styles.aiActive]}>
+              <Text style={styles.aiText}>AI</Text>
+            </View>
+          </Pressable>
+        ) : (
+          <View onStartShouldSetResponder={() => true} style={styles.aiWrap}>
+            <View style={[styles.aiBadge, styles.aiInactive]}>
+              <Text style={styles.aiText}>AI</Text>
+            </View>
           </View>
-        </Pressable>
+        )}
       </View>
     </Pressable>
+    </View>
   );
 }
 
@@ -106,6 +132,7 @@ const styles = StyleSheet.create({
   summaryText: { fontSize: 14, lineHeight: 21 },
   footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   expandText: { fontSize: 14, color: '#208AEF', fontWeight: '500' },
+  aiWrap: {},
   aiBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 9 },
   aiActive: { backgroundColor: '#7CB342' },
   aiInactive: { backgroundColor: '#dcdcdc' },
