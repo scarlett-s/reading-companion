@@ -120,8 +120,8 @@ export default function CalendarScreen() {
 }
 
 function formatProgress(e: ReadingEntry): string {
-  if (e.progressPercent != null) return `${round2(e.progressPercent)}%`;
-  if (e.currentPage != null) return `第 ${e.currentPage} 页`;
+  if (e.progressPercent != null) return `读至 ${round2(e.progressPercent)}%`;
+  if (e.currentPage != null) return `读至 ${e.currentPage} 页`;
   return '';
 }
 
