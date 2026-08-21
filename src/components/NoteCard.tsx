@@ -80,19 +80,12 @@ export default function NoteCard({
           ) : (
             <View />
           )}
-          {hasAI ? (
-            <Pressable onPress={onPressAI} hitSlop={6} style={styles.aiWrap}>
-              <View style={[styles.aiBadge, styles.aiActive]}>
-                <Text style={styles.aiText}>AI</Text>
-              </View>
-            </Pressable>
-          ) : (
-            <View onStartShouldSetResponder={() => true} style={styles.aiWrap}>
-              <View style={[styles.aiBadge, styles.aiInactive]}>
-                <Text style={styles.aiText}>AI</Text>
-              </View>
+          {/* AI 图标：绿色 = 可发起对话，灰色 = 已对话过 */}
+          <Pressable onPress={onPressAI} hitSlop={6} style={styles.aiWrap}>
+            <View style={[styles.aiBadge, hasAI ? styles.aiUsed : styles.aiAvailable]}>
+              <Text style={styles.aiText}>AI</Text>
             </View>
-          )}
+          </Pressable>
         </View>
       </Pressable>
     </View>
@@ -126,7 +119,7 @@ const styles = StyleSheet.create({
   expandText: { fontSize: 14, color: '#208AEF', fontWeight: '500' },
   aiWrap: {},
   aiBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 9 },
-  aiActive: { backgroundColor: '#7CB342' },
-  aiInactive: { backgroundColor: '#dcdcdc' },
+  aiAvailable: { backgroundColor: '#7CB342' },
+  aiUsed: { backgroundColor: '#dcdcdc' },
   aiText: { fontSize: 12, color: '#fff', fontWeight: '700' },
 });

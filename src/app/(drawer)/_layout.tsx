@@ -31,7 +31,7 @@ export default function DrawerLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f0f0f0' },
+  root: { flex: 1, backgroundColor: '#F3F5F2' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 56,
     paddingBottom: 12,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F3F5F2',
   },
   menuBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   menuIcon: { fontSize: 22, color: '#222' },

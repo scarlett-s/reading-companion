@@ -14,8 +14,13 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { getAllBooks, addEntry, updateEntry, getEntry, getBook, generateId } from '@/db';
 import { todayString } from '@/utils';
 import { Book, ReadingEntry } from '@/types';
+import { Icon } from '@/components/Icon';
 
 const SUBMIT_ID = 'note-new-submit';
+const PAGE_BG = '#F3F5F2';
+const CARD_RADIUS = 16;
+
+type Unit = 'page' | 'percent';
 
 export default function NewNoteScreen() {
   const router = useRouter();
@@ -26,8 +31,9 @@ export default function NewNoteScreen() {
   const [original, setOriginal] = useState<ReadingEntry | null>(null);
   const [bookQuery, setBookQuery] = useState('');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [currentPage, setCurrentPage] = useState('');
-  const [percent, setPercent] = useState('');
+  const [unit, setUnit] = useState<Unit>('page');
+  const [unitMenuOpen, setUnitMenuOpen] = useState(false);
+  const [progressValue, setProgressValue] = useState('');
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -48,8 +54,13 @@ export default function NewNoteScreen() {
         setSelectedBook(b);
         setBookQuery(b.title);
       }
-      setCurrentPage(e.currentPage != null ? String(e.currentPage) : '');
-      setPercent(e.progressPercent != null ? String(e.progressPercent) : '');
+      if (e.progressPercent != null) {
+        setUnit('percent');
+        setProgressValue(String(e.progressPercent));
+      } else if (e.currentPage != null) {
+        setUnit('page');
+        setProgressValue(String(e.currentPage));
+      }
       setComment(e.comment);
     })();
   }, [entryId]);
@@ -67,222 +78,286 @@ export default function NewNoteScreen() {
     setBookQuery(b.title);
   }
 
-  const hasProgress = currentPage.trim().length > 0 || percent.trim().length > 0;
+  const hasProgress = progressValue.trim().length > 0;
   const canSave = selectedBook != null && hasProgress && comment.trim().length > 0;
 
-  function buildEntry(mode: 'plain' | 'chat') {
-    if (!selectedBook) return null;
-    return {
-      id: generateId(),
-      bookId: selectedBook.id,
-      date: todayString(),
-      currentPage: currentPage.trim() ? Number(currentPage) : undefined,
-      progressPercent: percent.trim() ? Number(percent) : undefined,
-      comment: comment.trim(),
-      mode,
-      createdAt: Date.now(),
-    };
-  }
-
-  async function submitPlain() {
+  async function submit() {
     if (editing && original && selectedBook) {
       setSaving(true);
       await updateEntry(original.id, {
         bookId: selectedBook.id,
         date: original.date,
-        currentPage: currentPage.trim() ? Number(currentPage) : undefined,
-        progressPercent: percent.trim() ? Number(percent) : undefined,
+        currentPage: unit === 'page' && progressValue.trim() ? Number(progressValue) : undefined,
+        progressPercent: unit === 'percent' && progressValue.trim() ? Number(progressValue) : undefined,
         comment: comment.trim(),
       });
       Keyboard.dismiss();
       router.back();
       return;
     }
-    const entry = buildEntry('plain');
-    if (!entry) return;
+    if (!selectedBook) return;
     setSaving(true);
-    await addEntry(entry);
+    await addEntry({
+      id: generateId(),
+      bookId: selectedBook.id,
+      date: todayString(),
+      currentPage: unit === 'page' && progressValue.trim() ? Number(progressValue) : undefined,
+      progressPercent: unit === 'percent' && progressValue.trim() ? Number(progressValue) : undefined,
+      comment: comment.trim(),
+      mode: 'plain',
+      createdAt: Date.now(),
+    });
     Keyboard.dismiss();
     router.back();
   }
 
-  async function goChat() {
-    const entry = buildEntry('chat');
-    if (!entry) return;
-    setSaving(true);
-    await addEntry(entry);
-    Keyboard.dismiss();
-    router.replace({ pathname: '/note/chat/[entryId]', params: { entryId: entry.id } });
-  }
-
-  // iOS 键盘附件视图（顶部放「提交」按钮）
   const accessory = Platform.OS === 'ios' && (
     <InputAccessoryView nativeID={SUBMIT_ID}>
       <View style={styles.accessory}>
-        <View style={{ flex: 1 }} />
+        <View style={styles.toolbar}>
+          <Icon name="bold" size={18} />
+          <Icon name="italic" size={18} />
+          <Icon name="underline" size={18} />
+          <Icon name="list" size={18} />
+          <Icon name="hash" size={18} />
+          <Icon name="image" size={18} />
+          <View style={{ flex: 1 }} />
+        </View>
         <Pressable
           style={[styles.accessorySubmit, !canSave && styles.btnDisabled]}
           disabled={!canSave}
-          onPress={submitPlain}>
-          <Text style={styles.accessorySubmitText}>提交</Text>
+          onPress={submit}>
+          <Icon name="send" size={18} color="#fff" />
         </Pressable>
       </View>
     </InputAccessoryView>
   );
 
   return (
-    <View style={styles.root}>
+    <View style={styles.page}>
+      <View style={styles.topbar}>
+        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+          <Text style={styles.backIcon}>‹</Text>
+        </Pressable>
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>书名</Text>
-        <TextInput
-          style={styles.input}
-          value={bookQuery}
-          onChangeText={(t) => {
-            setBookQuery(t);
-            setSelectedBook(null);
-          }}
-          placeholder="输入书名，从书库选择"
-          autoCorrect={false}
-        />
-        {!selectedBook && bookQuery.trim().length > 0 && (
-          <View style={styles.dropdown}>
-            {matches.map((b) => (
-              <Pressable key={b.id} style={styles.dropdownItem} onPress={() => selectBook(b)}>
-                <Text style={styles.dropdownTitle} numberOfLines={1}>
-                  {b.title}
-                </Text>
-                <Text style={styles.dropdownAuthor}>{b.author}</Text>
+        <View style={styles.field}>
+          <TextInput
+            style={styles.input}
+            value={bookQuery}
+            onChangeText={(t) => {
+              setBookQuery(t);
+              setSelectedBook(null);
+            }}
+            placeholder="书名"
+            placeholderTextColor="#888"
+            autoCorrect={false}
+          />
+          {!selectedBook && bookQuery.trim().length > 0 && (
+            <View style={styles.dropdown}>
+              {matches.map((b) => (
+                <Pressable key={b.id} style={styles.dropdownItem} onPress={() => selectBook(b)}>
+                  <Text style={styles.dropdownTitle} numberOfLines={1}>
+                    {b.title}
+                  </Text>
+                  <Text style={styles.dropdownAuthor}>{b.author}</Text>
+                </Pressable>
+              ))}
+              <Pressable style={styles.dropdownItem} onPress={() => router.push('/library/add')}>
+                <Text style={styles.addNew}>＋ 添加新图书</Text>
               </Pressable>
-            ))}
-            <Pressable style={styles.dropdownItem} onPress={() => router.push('/library/add')}>
-              <Text style={styles.addNew}>＋ 添加新图书</Text>
-            </Pressable>
-          </View>
-        )}
-
-        <Text style={styles.label}>阅读进度（页数 或 百分比，至少填一项）</Text>
-        <View style={styles.progressRow}>
-          <TextInput
-            style={[styles.input, styles.progressField]}
-            value={currentPage}
-            onChangeText={setCurrentPage}
-            placeholder="读到第几页"
-            keyboardType="number-pad"
-          />
-          <TextInput
-            style={[styles.input, styles.progressField]}
-            value={percent}
-            onChangeText={setPercent}
-            placeholder="百分比 %"
-            keyboardType="number-pad"
-          />
+            </View>
+          )}
         </View>
 
-        <Text style={styles.label}>笔记（必填）</Text>
+        <View style={styles.field}>
+          <View style={styles.progressPill}>
+            <TextInput
+              style={styles.progressInput}
+              value={progressValue}
+              onChangeText={setProgressValue}
+              placeholder="阅读进度"
+              placeholderTextColor="#888"
+              keyboardType="number-pad"
+              inputAccessoryViewID={Platform.OS === 'ios' ? SUBMIT_ID : undefined}
+            />
+            <View style={styles.progressDivider} />
+            <Pressable style={styles.unitToggle} onPress={() => setUnitMenuOpen((v) => !v)} hitSlop={6}>
+              <Text style={styles.unitText}>{unit === 'page' ? '页' : '%'}</Text>
+              <Text style={styles.unitCaret}>⌄</Text>
+            </Pressable>
+          </View>
+          {unitMenuOpen && (
+            <View style={styles.unitMenu}>
+              {(['page', 'percent'] as Unit[]).map((u) => (
+                <Pressable
+                  key={u}
+                  style={[styles.unitItem, u === unit && styles.unitItemActive]}
+                  onPress={() => {
+                    setUnit(u);
+                    setUnitMenuOpen(false);
+                  }}>
+                  <Text style={[styles.unitItemText, u === unit && styles.unitItemTextActive]}>
+                    {u === 'page' ? '页' : '%'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
+
         <TextInput
           style={styles.commentInput}
           value={comment}
           onChangeText={setComment}
-          placeholder="今天读完后的一点想法…"
+          placeholder="现在的想法"
+          placeholderTextColor="#888"
           multiline
           textAlignVertical="top"
           inputAccessoryViewID={Platform.OS === 'ios' ? SUBMIT_ID : undefined}
         />
-
-        {!editing && (
-          <Text style={styles.hint}>「与 AI 对话」先保存笔记，再进入苏格拉底式对话（最多 10 轮）。</Text>
-        )}
       </ScrollView>
 
-      {!editing && (
+      {accessory}
+
+      {Platform.OS !== 'ios' && (
         <View style={styles.bottomBar} pointerEvents="box-none">
           <View style={styles.bottomRow}>
             <View style={{ flex: 1 }} />
             <Pressable
-              style={[styles.btnChat, !canSave && styles.btnDisabled]}
+              style={[styles.androidSubmit, !canSave && styles.btnDisabled]}
               disabled={!canSave}
-              onPress={goChat}>
-              <Text style={styles.btnText}>与 AI 对话</Text>
+              onPress={submit}>
+              <Text style={styles.androidSubmitText}>提交</Text>
             </Pressable>
           </View>
         </View>
       )}
-
-      {accessory}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
-  scroll: { flex: 1 },
-  content: { padding: 16, gap: 10 },
-  label: { fontSize: 13, color: '#555', marginTop: 4 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+  page: { flex: 1, backgroundColor: PAGE_BG },
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 56,
+    paddingBottom: 6,
+  },
+  backBtn: { paddingHorizontal: 4, paddingVertical: 4 },
+  backIcon: { fontSize: 28, color: '#222', lineHeight: 28 },
+  scroll: { flex: 1 },
+  content: { padding: 16, gap: 28, flexGrow: 1, paddingBottom: 48 },
+  field: { position: 'relative' },
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: CARD_RADIUS,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     fontSize: 15,
+    color: '#222',
   },
   dropdown: {
+    position: 'absolute',
+    top: 60,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: CARD_RADIUS,
     borderWidth: 1,
     borderColor: '#eee',
-    borderRadius: 8,
-    marginTop: -2,
-    backgroundColor: '#fff',
-    elevation: 2,
+    zIndex: 10,
   },
-  dropdownItem: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
+  dropdownItem: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+  },
   dropdownTitle: { fontSize: 15, fontWeight: '500' },
   dropdownAuthor: { fontSize: 12, color: '#888', marginTop: 1 },
   addNew: { fontSize: 14, color: '#208AEF', fontWeight: '600' },
-  progressRow: { flexDirection: 'row', gap: 10 },
-  progressField: { flex: 1 },
-  commentInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    minHeight: 140,
+  progressPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: CARD_RADIUS,
+    paddingLeft: 18,
   },
-  bottomBar: {
+  progressInput: { flex: 1, paddingVertical: 14, fontSize: 15, color: '#222' },
+  progressDivider: { width: 1, height: 20, backgroundColor: '#e0e0e0', marginHorizontal: 12 },
+  unitToggle: {
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  unitText: { fontSize: 15, color: '#222' },
+  unitCaret: { fontSize: 14, color: '#888', marginTop: -2 },
+  unitMenu: {
     position: 'absolute',
-    left: 0,
+    top: 60,
     right: 0,
-    bottom: 0,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: CARD_RADIUS,
+    borderWidth: 1,
+    borderColor: '#eee',
+    overflow: 'hidden',
+    minWidth: 100,
+    zIndex: 10,
   },
+  unitItem: { paddingHorizontal: 18, paddingVertical: 12 },
+  unitItemActive: { backgroundColor: '#f4f6f8' },
+  unitItemText: { fontSize: 15, color: '#222' },
+  unitItemTextActive: { color: '#7CB342', fontWeight: '600' },
+  commentInput: {
+    backgroundColor: '#fff',
+    borderRadius: CARD_RADIUS,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#222',
+    flex: 1,
+  },
+  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16 },
   bottomRow: { flexDirection: 'row', alignItems: 'center' },
-  btnChat: {
-    backgroundColor: '#7CB342',
+  androidSubmit: {
+    backgroundColor: '#208AEF',
     borderRadius: 22,
     paddingHorizontal: 22,
     paddingVertical: 12,
   },
+  androidSubmitText: { color: '#fff', fontWeight: '600', fontSize: 15 },
   btnDisabled: { opacity: 0.4 },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  hint: { fontSize: 12, color: '#999', lineHeight: 17, marginTop: 4 },
   accessory: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f7f7f7',
     borderTopWidth: 1,
     borderTopColor: '#ddd',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 18,
+  },
+  toolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    flex: 1,
   },
   accessorySubmit: {
-    backgroundColor: '#208AEF',
-    borderRadius: 16,
+    backgroundColor: '#7CB342',
+    borderRadius: 18,
     paddingHorizontal: 18,
-    paddingVertical: 8,
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  accessorySubmitText: { color: '#fff', fontWeight: '600', fontSize: 15 },
 });

@@ -133,7 +133,13 @@ export default function HomeScreen() {
               onToggleExpand={() => toggleExpand(n.id)}
               onPressBook={() => router.push({ pathname: '/library/[id]', params: { id: n.bookId } })}
               onOpenMenu={(anchorRef) => openMenu(n.id, anchorRef)}
-              onPressAI={() => setDiscussionEntry(n.entry)}
+              onPressAI={() => {
+                if (entryHasAI(n.entry)) {
+                  setDiscussionEntry(n.entry);
+                } else {
+                  router.push({ pathname: '/note/chat/[entryId]', params: { entryId: n.id } });
+                }
+              }}
               onLayoutReport={onCardLayout}
             />
           ))
@@ -203,7 +209,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f0f0f0' },
+  root: { flex: 1, backgroundColor: '#F3F5F2' },
   content: { padding: 16, gap: 16, paddingBottom: 120 },
   empty: { color: '#999', textAlign: 'center', marginTop: 40 },
   fab: {

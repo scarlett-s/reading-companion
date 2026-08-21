@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { entryHasAI, tsToDateTime } from '@/utils';
+import { tsToDateTime } from '@/utils';
 import { ReadingEntry } from '@/types';
 import { getAllEntries, getAllBooks, getLinksForEntry, addLink, removeLink, deleteEntry } from '@/db';
 
@@ -38,8 +38,6 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
   const [others, setOthers] = useState<ReadingEntry[]>([]);
   const [bookTitles, setBookTitles] = useState<Record<string, string>>({});
   const [linkedIds, setLinkedIds] = useState<Set<string>>(new Set());
-
-  const hasAI = entryHasAI(entry);
 
   useEffect(() => {
     if (visible) setView('menu');
@@ -71,11 +69,6 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
     setLinkedIds(next);
   }
 
-  function goChat() {
-    onClose();
-    router.push({ pathname: '/note/chat/[entryId]', params: { entryId: entry.id } });
-  }
-
   function goEdit() {
     onClose();
     router.push({ pathname: '/note/new', params: { entryId: entry.id } });
@@ -100,7 +93,7 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
   const win = Dimensions.get('window');
   const safeTop = 56;
   const safeBottom = 40;
-  const MENU_HEIGHT = 220;
+  const MENU_HEIGHT = 175;
   const LINKS_HEIGHT = 320;
 
   let top = 0;
@@ -128,9 +121,6 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
           onPress={() => {}}>
           {view === 'menu' ? (
             <>
-              <Pressable style={[styles.item, hasAI && styles.itemDisabled]} disabled={hasAI} onPress={goChat}>
-                <Text style={[styles.itemText, hasAI ? styles.textDisabled : styles.textChat]}>与 AI 对话</Text>
-              </Pressable>
               <Pressable style={styles.item} onPress={goEdit}>
                 <Text style={styles.itemText}>编辑</Text>
               </Pressable>
@@ -197,10 +187,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   item: { paddingVertical: 14, paddingHorizontal: 20 },
-  itemDisabled: { opacity: 0.5 },
-  itemText: { fontSize: 16, color: '#222' },
-  textChat: { color: '#7CB342', fontWeight: '600' },
-  textDisabled: { color: '#c8c8c8' },
+  itemText: { fontSize: 16 },
   textDanger: { color: '#e74c3c' },
   meta: {
     paddingVertical: 10,
