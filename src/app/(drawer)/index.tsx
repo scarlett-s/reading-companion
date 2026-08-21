@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,6 @@ import {
   StyleSheet,
   Modal,
   Dimensions,
-  findNodeHandle,
-  UIManager,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllEntries, getAllBooks } from '@/db';
@@ -41,10 +39,11 @@ export default function HomeScreen() {
   const [menuEntryId, setMenuEntryId] = useState<string | null>(null);
   const [discussionEntry, setDiscussionEntry] = useState<ReadingEntry | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const [expandTextOnScreen, setExpandTextOnScreen] = useState<Record<string, boolean>>({});
-  const expandTextRefs = useRef<Record<string, React.RefObject<View | null>>>({});
-  const cardRefs = useRef<Record<string, React.RefObject<View | null>>>({});
-  const [cardRightEdges, setCardRightEdges] = useState<Record<string, number>>({});
+  // 卡片在滚动容器里的布局（相对 content 原点）
+  const [cardLayouts, setCardLayouts] = useState<Record<string, { y: number; height: number }>>({});
+  // 当前滚动偏移 + 视口高度（纯计算，不依赖 measure）
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
   const load = useCallback(() => {
     Promise.all([getAllEntries(), getAllBooks()]).then(([entries, books]) => {
@@ -79,73 +78,44 @@ export default function HomeScreen() {
   }
 
   function openMenu(id: string, anchorRef: React.RefObject<View | null>) {
-    const node = findNodeHandle(anchorRef.current);
-    if (node) {
-      UIManager.measure(node, (x, y, w, h, px, py) => {
-        setMenuAnchor({ x: px, y: py, w, h });
-        setMenuEntryId(id);
-      });
-    } else {
-      setMenuEntryId(id);
-    }
-  }
-
-  function registerExpandTextRef(id: string, ref: React.RefObject<View | null>) {
-    if (expandTextRefs.current[id] !== ref) {
-      expandTextRefs.current[id] = ref;
-    }
-  }
-
-  function registerCardRef(id: string, ref: React.RefObject<View | null>) {
-    if (cardRefs.current[id] !== ref) {
-      cardRefs.current[id] = ref;
-    }
-    const node = findNodeHandle(ref.current);
-    if (!node) return;
-    UIManager.measure(node, (x, y, w, h, px, py) => {
-      const right = px + w;
-      setCardRightEdges((prev) => (prev[id] === right ? prev : { ...prev, [id]: right }));
+    anchorRef.current?.measureInWindow((x, y, w, h) => {
+      setMenuAnchor({ x, y, w, h });
     });
+    setMenuEntryId(id);
   }
 
-  function remeasureExpandTexts() {
-    const screenH = Dimensions.get('window').height;
-    const next: Record<string, boolean> = {};
-    let dirty = false;
-    for (const id of Object.keys(expandTextRefs.current)) {
-      const ref = expandTextRefs.current[id];
-      const node = findNodeHandle(ref?.current ?? null);
-      if (!node) {
-        next[id] = false;
-        continue;
-      }
-      UIManager.measure(node, (x, y, w, h, px, py) => {
-        const visible = py < screenH && py + h > 0;
-        if (visible !== expandTextOnScreen[id]) {
-          setExpandTextOnScreen((prev) => ({ ...prev, [id]: visible }));
-        }
-      });
-      next[id] = false; // placeholder
-      dirty = true;
-    }
-    if (dirty) {
-      // placeholder 同步刷新；实际值在 measure 回调里 set
-    }
+  function onCardLayout(id: string, y: number, height: number) {
+    setCardLayouts((prev) => {
+      const cur = prev[id];
+      if (cur && cur.y === y && cur.height === height) return prev;
+      return { ...prev, [id]: { y, height } };
+    });
   }
 
   const menuEntry = menuEntryId ? notes.find((n) => n.id === menuEntryId)?.entry : null;
 
-  // 任一卡片展开且其「收起」文字不在屏幕上 → 显示浮动「收起」
-  const anyExpanded = notes.some((n) => expanded[n.id]);
-  const showFloatingCollapse = anyExpanded && !Object.values(expandTextOnScreen).some(Boolean);
+  // 浮动「收起」：有展开的卡片，且其底部（「收起」所在）已滚出视口下边沿（或在上边沿之上）
+  let anyExpanded = false;
+  let anyCollapseOffScreen = false;
+  for (const n of notes) {
+    if (!expanded[n.id]) continue;
+    anyExpanded = true;
+    const l = cardLayouts[n.id];
+    if (!l) continue;
+    const bottom = l.y + l.height;
+    if (bottom > scrollOffset + viewportHeight || bottom < scrollOffset) {
+      anyCollapseOffScreen = true;
+    }
+  }
+  const showFloatingCollapse = anyExpanded && anyCollapseOffScreen;
 
   return (
     <View style={styles.root}>
       <ScrollView
         contentContainerStyle={styles.content}
-        onScrollEndDrag={remeasureExpandTexts}
-        onMomentumScrollEnd={remeasureExpandTexts}
-        scrollEventThrottle={32}>
+        onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+        onScroll={(e) => setScrollOffset(e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}>
         {notes.length === 0 ? (
           <Text style={styles.empty}>还没有笔记，点右下角 ＋ 开始记录</Text>
         ) : (
@@ -164,8 +134,7 @@ export default function HomeScreen() {
               onPressBook={() => router.push({ pathname: '/library/[id]', params: { id: n.bookId } })}
               onOpenMenu={(anchorRef) => openMenu(n.id, anchorRef)}
               onPressAI={() => setDiscussionEntry(n.entry)}
-              registerExpandTextRef={registerExpandTextRef}
-              registerCardRef={registerCardRef}
+              onLayoutReport={onCardLayout}
             />
           ))
         )}
@@ -186,7 +155,7 @@ export default function HomeScreen() {
           entry={menuEntry}
           visible
           anchor={menuAnchor}
-          cardRight={menuEntryId ? cardRightEdges[menuEntryId] : undefined}
+          cardRight={Dimensions.get('window').width - 16}
           onClose={() => {
             setMenuEntryId(null);
             setMenuAnchor(null);

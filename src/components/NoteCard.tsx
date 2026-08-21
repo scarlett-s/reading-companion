@@ -13,10 +13,8 @@ export interface NoteCardProps {
   onPressBook: () => void;
   onOpenMenu: (anchorRef: React.RefObject<View | null>) => void;
   onPressAI: () => void;
-  /** 父页面持有「展开/收起」文字 ref，用于滚动时测量是否在屏幕内 */
-  registerExpandTextRef?: (id: string, ref: React.RefObject<View | null>) => void;
-  /** 父页面持有卡片根 ref，用于测出卡片右边界，让编辑弹窗严格右对齐 */
-  registerCardRef?: (id: string, ref: React.RefObject<View | null>) => void;
+  /** 报告卡片在滚动容器里的 y 与高度（相对 content 原点），供父页面计算是否滚出屏幕 */
+  onLayoutReport?: (id: string, y: number, height: number) => void;
   cardId: string;
 }
 
@@ -32,77 +30,71 @@ export default function NoteCard({
   onPressBook,
   onOpenMenu,
   onPressAI,
-  registerExpandTextRef,
-  registerCardRef,
+  onLayoutReport,
   cardId,
 }: NoteCardProps) {
   const long = comment.length > 80 || comment.includes('\n');
   const menuRef = useRef<View>(null);
-  const expandTextRef = useRef<View>(null);
-  const cardRef = useRef<View>(null);
 
   return (
     <View
-      ref={cardRef}
-      onLayout={() => registerCardRef?.(cardId, cardRef)}
+      onLayout={(e) => onLayoutReport?.(cardId, e.nativeEvent.layout.y, e.nativeEvent.layout.height)}
       collapsable={false}>
-    <Pressable style={styles.card} onPress={onToggleExpand}>
-      <View style={styles.head}>
-        <View style={styles.headLeft}>
-          <Text style={styles.date}>{date}</Text>
-          <Pressable onPress={onPressBook} hitSlop={6}>
-            <Text style={styles.title} numberOfLines={1}>
-              {title}
-            </Text>
+      <Pressable style={styles.card} onPress={onToggleExpand}>
+        <View style={styles.head}>
+          <View style={styles.headLeft}>
+            <Text style={styles.date}>{date}</Text>
+            <Pressable onPress={onPressBook} hitSlop={6}>
+              <Text style={styles.title} numberOfLines={1}>
+                {title}
+              </Text>
+            </Pressable>
+          </View>
+          <Pressable
+            ref={menuRef}
+            hitSlop={10}
+            onPress={() => onOpenMenu(menuRef)}
+            style={styles.menuBtn}>
+            <Text style={styles.menuIcon}>⋯</Text>
           </Pressable>
         </View>
-        <Pressable
-          ref={menuRef}
-          hitSlop={10}
-          onPress={() => onOpenMenu(menuRef)}
-          style={styles.menuBtn}>
-          <Text style={styles.menuIcon}>⋯</Text>
-        </Pressable>
-      </View>
 
-      {progress ? <Text style={styles.progress}>{progress}</Text> : null}
+        {progress ? <Text style={styles.progress}>{progress}</Text> : null}
 
-      <Text style={styles.comment} numberOfLines={expanded ? undefined : 4}>
-        {comment}
-      </Text>
+        <Text style={styles.comment} numberOfLines={expanded ? undefined : 4}>
+          {comment}
+        </Text>
 
-      {expanded && !!aiSummary && (
-        <View style={styles.summary}>
-          <Text style={styles.summaryLabel}>AI 总结</Text>
-          <Text style={styles.summaryText}>{aiSummary}</Text>
-        </View>
-      )}
+        {expanded && !!aiSummary && (
+          <View style={styles.summary}>
+            <Text style={styles.summaryLabel}>AI 总结</Text>
+            <Text style={styles.summaryText}>{aiSummary}</Text>
+          </View>
+        )}
 
-      <View style={styles.footerRow}>
-        {long ? (
-          <View ref={expandTextRef} onLayout={() => registerExpandTextRef?.(cardId, expandTextRef)}>
+        <View style={styles.footerRow}>
+          {long ? (
             <Pressable onPress={onToggleExpand} hitSlop={6}>
               <Text style={styles.expandText}>{expanded ? '收起' : '展开'}</Text>
             </Pressable>
-          </View>
-        ) : (
-          <View />
-        )}
-        {hasAI ? (
-          <Pressable onPress={onPressAI} hitSlop={6} style={styles.aiWrap}>
-            <View style={[styles.aiBadge, styles.aiActive]}>
-              <Text style={styles.aiText}>AI</Text>
+          ) : (
+            <View />
+          )}
+          {hasAI ? (
+            <Pressable onPress={onPressAI} hitSlop={6} style={styles.aiWrap}>
+              <View style={[styles.aiBadge, styles.aiActive]}>
+                <Text style={styles.aiText}>AI</Text>
+              </View>
+            </Pressable>
+          ) : (
+            <View onStartShouldSetResponder={() => true} style={styles.aiWrap}>
+              <View style={[styles.aiBadge, styles.aiInactive]}>
+                <Text style={styles.aiText}>AI</Text>
+              </View>
             </View>
-          </Pressable>
-        ) : (
-          <View onStartShouldSetResponder={() => true} style={styles.aiWrap}>
-            <View style={[styles.aiBadge, styles.aiInactive]}>
-              <Text style={styles.aiText}>AI</Text>
-            </View>
-          </View>
-        )}
-      </View>
-    </Pressable>
+          )}
+        </View>
+      </Pressable>
     </View>
   );
 }
