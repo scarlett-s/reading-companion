@@ -89,3 +89,77 @@
 - [x] T10 打磨 + 验收
 
 详见 `report/2026-08-18-report.md`。
+
+---
+
+## Phase 2.5（7 项修改）
+
+> 用户反馈的 7 项修改，详见 `tasks/plan-7项修改.md`。
+
+- [x] **T23 首页卡片可查看/编辑/删除/双链**：`db.ts` 新增 `links` 表 + `updateEntry`/`deleteEntry`/`addLink`/`removeLink`/`getLinksForEntry`/`getBacklinksForEntry`；新建 `note/[id].tsx`（查看/编辑/删除/关联/反向链接）；`note/new.tsx` 支持编辑；`NoteCard` 可点击 + 书名可点；首页透传 id/bookId
+  - Acceptance：卡片点按进详情；编辑/删除可用；关联后双方可见（双向链接）
+  - Verify：`npx tsc --noEmit`；手动（Web + iOS）
+  - Files：`src/db.ts`、`src/app/note/[id].tsx`、`src/app/note/new.tsx`、`src/components/NoteCard.tsx`、`src/app/(drawer)/index.tsx`
+
+- [x] **T24 点击卡片书名进书详情**：`NoteCard` 书名按钮 → `/library/[id]`
+  - Acceptance：点击书名进入对应图书详情页
+  - Verify：手动
+  - Files：`src/components/NoteCard.tsx`、`src/app/(drawer)/index.tsx`
+
+- [x] **T25 键盘遮挡输入框**：`KeyboardAvoidingView` 包裹所有输入屏幕
+  - Acceptance：新增笔记 / 与 AI 对话等输入时键盘不遮挡
+  - Verify：手动（iOS）
+  - Files：`src/app/note/new.tsx`、`src/app/note/chat/[entryId].tsx`、`src/app/library/add.tsx`、`src/app/(drawer)/library/index.tsx`、`src/app/(drawer)/settings.tsx`
+
+- [x] **T26 豆瓣读书搜索**：`douban.ts` + `BookSearchResult` 提到 `types.ts` + `library/add.tsx` 搜索源切换
+  - Acceptance：豆瓣搜中文书可命中；Open Library 仍作英文备选
+  - Verify：手动 + `npm test`（`douban.test.ts`）
+  - Files：`src/douban.ts`、`src/types.ts`、`src/openlibrary.ts`、`src/app/library/add.tsx`
+
+- [x] **T27 统计百分数保留 2 位**：`utils.ts` `round2` + `BarChart`/`formatProgress` 统一
+  - Acceptance：统计页百分数只保留 2 位小数
+  - Verify：`npm test` + 手动
+  - Files：`src/utils.ts`、`src/components/BarChart.tsx`
+
+- [x] **T28 AI 停止发问**：`ai.ts` `detectStopIntent` + 提示词强调上限非目标、用户想结束即收尾
+  - Acceptance：AI 不再必问满 10 轮；用户表达停止意愿即终止
+  - Verify：`npm test` + 手动（需 AI）
+  - Files：`src/ai.ts`、`src/app/note/chat/[entryId].tsx`
+
+- [x] **T29 预设告别回复**：`ai.ts` `farewellFor` + chat 页命中停止意图直接以预设回复收尾保存
+  - Acceptance：用户说「就聊到这」等 → 回复「我们下次再聊！」/「see you next time!」并保存
+  - Verify：`npm test` + 手动
+  - Files：`src/ai.ts`、`src/app/note/chat/[entryId].tsx`
+
+---
+
+## Phase 2.5 Round 2 — UI 重新设计（参考 ref-landingpage / ref-editcard / ref-dashboard）
+
+> 9 项 UI 调整；详见 `tasks/plan-7项修改-round3.md`。
+> 决策：菜单不加「复制」；chat 键盘用 `react-native-keyboard-controller`；豆瓣详情失败时部分字段也填。
+
+- [x] **T30 首页样式参考 ref-landingpage**：`NoteCard` 圆角 16 / 间距 16 / 阴影更浅；正文 4 行 + 「展开」蓝色文字；整卡可点进详情；右上「…」打开菜单
+  - Files：`src/components/NoteCard.tsx`、`src/app/(drawer)/index.tsx`
+
+- [x] **T31 卡片…白卡菜单 + AI 对话禁用**：新组件 `NoteMenu`；首项按 `entryHasAI` 灰/绿色；底部字数 + 最后编辑
+  - Files：`src/components/NoteMenu.tsx`、`src/components/NoteCard.tsx`、`src/app/(drawer)/index.tsx`、`src/app/note/[id].tsx`
+
+- [x] **T32 卡片右下 AI 小标记**：抽 `entryHasAI(entry)` 到 `utils.ts`；底部右胶囊（绿/灰）
+  - Files：`src/utils.ts`、`src/components/NoteCard.tsx`、`__tests__/utils.test.ts`
+
+- [x] **T33 豆瓣搜索信息补全**：`fetchDoubanDetail` HTML 解析；`BookSearchResult` 加 `translator`；`Book` 加 `translator`；in-memory cache；失败时已抓到的字段保留
+  - Files：`src/douban.ts`、`src/types.ts`、`src/db.ts`、`src/app/library/add.tsx`、`__tests__/douban.test.ts`
+
+- [x] **T34 笔记详情「查看对话」改文字 + 弹窗**：蓝色文字按钮；点击弹 `Modal` 显示对话气泡
+  - Files：`src/app/note/[id].tsx`
+
+- [x] **T35 AI 对话输入框不被键盘遮挡**：内置 `KeyboardAvoidingView` + `Keyboard.addListener` 监听键盘高度顶起 footer（**不引 native 依赖**，保证 Expo Go 可跑）
+  - Files：`src/app/note/chat/[entryId].tsx`
+
+- [x] **T36 笔记输入界面按钮位置**：「与 AI 对话」屏幕右下角（`KeyboardStickyView`）；iOS「提交」在 `InputAccessoryView` 内（键盘顶端）；Android 保留底部
+  - Files：`src/app/note/new.tsx`
+
+- [x] **T37 Drawer 抽屉样式重设计**：宽 320、品牌头、行高 56、选中态绿条 + 浅灰底
+  - Files：`src/components/Drawer.tsx`
+
+- [x] **T38 测试 + 验收**：`entryHasAI` / `fetchDoubanDetail` 测试；`npx tsc --noEmit` + `npm test` 通过

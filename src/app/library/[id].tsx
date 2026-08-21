@@ -14,7 +14,7 @@ import {
 } from '@/db';
 import { synthesizeBook } from '@/ai';
 import { daysWithEntries, readingSpanDays, daysSince } from '@/stats';
-import { todayString } from '@/utils';
+import { todayString, round2 } from '@/utils';
 import { Book, ReadingEntry, Reflection } from '@/types';
 import BookCover from '@/components/BookCover';
 import StarRating from '@/components/StarRating';
@@ -189,7 +189,7 @@ export default function BookDetailScreen() {
 }
 
 function formatProgress(e: ReadingEntry): string {
-  if (e.progressPercent != null) return `${e.progressPercent}%`;
+  if (e.progressPercent != null) return `${round2(e.progressPercent)}%`;
   if (e.currentPage != null) return `第 ${e.currentPage} 页`;
   return '';
 }

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { getEntriesByMonth, getAllBooks } from '@/db';
+import { round2 } from '@/utils';
 import { Book, ReadingEntry } from '@/types';
 
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
@@ -119,7 +120,7 @@ export default function CalendarScreen() {
 }
 
 function formatProgress(e: ReadingEntry): string {
-  if (e.progressPercent != null) return `${e.progressPercent}%`;
+  if (e.progressPercent != null) return `${round2(e.progressPercent)}%`;
   if (e.currentPage != null) return `第 ${e.currentPage} 页`;
   return '';
 }

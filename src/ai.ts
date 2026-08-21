@@ -54,8 +54,9 @@ export function buildSocraticMessages(
 
 规则：
 - 一次只问一个问题，问题要简短、开放。
-- 当你判断用户的想法已充分展开、信息足够时，回复以「[[END]]」开头并附一段总结，结束对话；
-- 否则只回复下一个问题。最多 10 轮提问。`,
+- 10 轮只是上限、不是目标：一旦用户的想法已充分展开、信息足够，就尽快结束，不必非问满 10 轮。
+- 当用户明确表达想结束（例如「就聊到这」「下次再说」「不聊了」等），立即结束，不要再继续提问。
+- 结束的方式统一：回复以「[[END]]」开头并附一段简短、温暖的总结；否则只回复下一个问题。最多 10 轮提问。`,
     },
     {
       role: 'user',
@@ -67,6 +68,77 @@ export function buildSocraticMessages(
 /** 判断 AI 是否发出结束信号 */
 export function isSocraticEnd(text: string): boolean {
   return text.trim().startsWith('[[END]]');
+}
+
+// ===== 停止意图识别 + 预设告别回复 =====
+
+/** 用户表达「想结束聊天」的常见中文说法 */
+const STOP_PATTERNS = [
+  '就聊到这',
+  '先聊到这',
+  '聊到这',
+  '就到这里',
+  '先到这',
+  '先这样',
+  '下次再说',
+  '下次再聊',
+  '以后再聊',
+  '改天再聊',
+  '不聊了',
+  '不说了',
+  '不想聊了',
+  '聊完了',
+  '聊得差不多',
+  '结束',
+  '收工',
+  '今天就到这',
+  '就到这',
+  '再见',
+  '拜拜',
+  '回见',
+  '晚安',
+  '就这样',
+];
+
+/** 用户表达「想结束聊天」的常见英文说法 */
+const STOP_PATTERNS_EN = [
+  'see you',
+  'see u',
+  'goodbye',
+  'bye',
+  'good night',
+  "let's stop",
+  'lets stop',
+  'stop here',
+  'stop now',
+  'i want to stop',
+  'next time',
+  'talk later',
+  'enough',
+  "that's enough",
+  'that is enough',
+  'im done',
+  "i'm done",
+  'i am done',
+  'wrap up',
+];
+
+/** 判断用户是否表达了停止/结束聊天的意愿 */
+export function detectStopIntent(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return STOP_PATTERNS.some((p) => t.includes(p)) || STOP_PATTERNS_EN.some((p) => t.includes(p));
+}
+
+/** 预设告别回复 */
+export const FAREWELL = {
+  zh: '我们下次再聊！',
+  en: 'see you next time!',
+};
+
+/** 根据用户最后一句的语言选择告别回复（含中文 → 中文；否则英文） */
+export function farewellFor(text: string): string {
+  return /[一-鿿]/.test(text) ? FAREWELL.zh : FAREWELL.en;
 }
 
 /** 对话结束时，让 AI 写一段简短总结（核心想法/观点） */

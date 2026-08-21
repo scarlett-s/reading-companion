@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { getSettings, saveSetting, getAllBooks, getAllEntries } from '@/db';
 import { allBooksToMarkdown, markdownToPlainText, markdownToHtml } from '@/export';
 import { AISettings, Book, ReadingEntry } from '@/types';
@@ -41,8 +50,14 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>AI 配置</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>AI 配置</Text>
       <Text style={styles.hint}>
         「与 AI 聊天」与「洞察报告」需要 AI。DeepSeek 需填 API Key；Ollama 本地可离线、无需 Key。
       </Text>
@@ -85,7 +100,8 @@ export default function SettingsScreen() {
           return markdownToPlainText(md);
         }}
       />
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -125,6 +141,7 @@ function Field({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  scroll: { flex: 1 },
   content: { padding: 20, gap: 16 },
   title: { fontSize: 22, fontWeight: '600' },
   hint: { fontSize: 13, color: '#666', lineHeight: 19 },

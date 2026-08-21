@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { Book, ReadingEntry, Reflection, AISettings, DiscussionTurn, CommentMode } from './types';
+import { Book, ReadingEntry, Reflection, AISettings, DiscussionTurn, CommentMode, LinkedEntry } from './types';
 import { planColumnMigrations } from './utils';
 
 type DB = Awaited<ReturnType<typeof SQLite.openDatabaseAsync>>;
@@ -30,6 +30,7 @@ export async function initDatabase(): Promise<void> {
       publishYear INTEGER,
       isbn TEXT,
       pageCount INTEGER,
+      translator TEXT,
       coverUrl TEXT,
       status TEXT NOT NULL DEFAULT 'reading',
       readCount INTEGER NOT NULL DEFAULT 0,
@@ -58,6 +59,13 @@ export async function initDatabase(): Promise<void> {
       content TEXT NOT NULL,
       createdAt INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS links (
+      id TEXT PRIMARY KEY NOT NULL,
+      fromEntryId TEXT NOT NULL,
+      toEntryId TEXT NOT NULL,
+      createdAt INTEGER NOT NULL,
+      UNIQUE(fromEntryId, toEntryId)
+    );
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY NOT NULL,
       value TEXT NOT NULL
@@ -69,6 +77,7 @@ export async function initDatabase(): Promise<void> {
   for (const stmt of planColumnMigrations('books', bookCols.map((c) => c.name), {
     readCount: 'INTEGER NOT NULL DEFAULT 0',
     rating: 'INTEGER',
+    translator: 'TEXT',
   })) {
     await db.execAsync(stmt);
   }
@@ -96,8 +105,8 @@ export async function addBook(book: Book): Promise<void> {
   const db = await getDb();
   await db.runAsync(
     `INSERT OR REPLACE INTO books
-       (id, title, author, publisher, publishYear, isbn, pageCount, coverUrl, status, readCount, rating, startedAt, finishedAt, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+       (id, title, author, publisher, publishYear, isbn, pageCount, translator, coverUrl, status, readCount, rating, startedAt, finishedAt, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     book.id,
     book.title,
     book.author,
@@ -105,6 +114,7 @@ export async function addBook(book: Book): Promise<void> {
     book.publishYear ?? null,
     book.isbn ?? null,
     book.pageCount ?? null,
+    book.translator ?? null,
     book.coverUrl ?? null,
     book.status ?? 'reading',
     book.readCount ?? 0,
@@ -304,6 +314,10 @@ interface ReadingEntryRow {
   createdAt: number;
 }
 
+interface LinkedEntryRow extends ReadingEntryRow {
+  bookTitle: string;
+}
+
 function parseEntry(row: ReadingEntryRow): ReadingEntry {
   return {
     id: row.id,
@@ -335,4 +349,78 @@ export async function getEntry(id: string): Promise<ReadingEntry | null> {
   const db = await getDb();
   const row = await db.getFirstAsync<ReadingEntryRow>('SELECT * FROM entries WHERE id = ?;', id);
   return row ? parseEntry(row) : null;
+}
+
+/** 编辑笔记：更新书名 / 日期 / 页数 / 百分比 / 正文 */
+export async function updateEntry(
+  id: string,
+  fields: { bookId: string; date: string; currentPage?: number; progressPercent?: number; comment: string }
+): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    'UPDATE entries SET bookId = ?, date = ?, currentPage = ?, progressPercent = ?, comment = ? WHERE id = ?;',
+    fields.bookId,
+    fields.date,
+    fields.currentPage ?? null,
+    fields.progressPercent ?? null,
+    fields.comment,
+    id
+  );
+}
+
+/** 删除笔记，并删除它作为源或目标的所有链接 */
+export async function deleteEntry(id: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM links WHERE fromEntryId = ? OR toEntryId = ?;', id, id);
+  await db.runAsync('DELETE FROM entries WHERE id = ?;', id);
+}
+
+// ===== 笔记链接（双链） =====
+
+/** 建立一条笔记链接（from → to）；已存在则忽略 */
+export async function addLink(fromEntryId: string, toEntryId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    'INSERT OR IGNORE INTO links (id, fromEntryId, toEntryId, createdAt) VALUES (?, ?, ?, ?);',
+    generateId(),
+    fromEntryId,
+    toEntryId,
+    Date.now()
+  );
+}
+
+/** 移除一条笔记链接 */
+export async function removeLink(fromEntryId: string, toEntryId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM links WHERE fromEntryId = ? AND toEntryId = ?;', fromEntryId, toEntryId);
+}
+
+/** 出链：当前笔记关联到的其它笔记 */
+export async function getLinksForEntry(entryId: string): Promise<LinkedEntry[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<LinkedEntryRow>(
+    `SELECT e.*, b.title AS bookTitle
+     FROM links l
+     JOIN entries e ON e.id = l.toEntryId
+     JOIN books b ON b.id = e.bookId
+     WHERE l.fromEntryId = ?
+     ORDER BY e.date DESC, e.createdAt DESC;`,
+    entryId
+  );
+  return rows.map((r) => ({ ...parseEntry(r), bookTitle: r.bookTitle }));
+}
+
+/** 入链（反向链接）：哪些笔记关联到了当前笔记 */
+export async function getBacklinksForEntry(entryId: string): Promise<LinkedEntry[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<LinkedEntryRow>(
+    `SELECT e.*, b.title AS bookTitle
+     FROM links l
+     JOIN entries e ON e.id = l.fromEntryId
+     JOIN books b ON b.id = e.bookId
+     WHERE l.toEntryId = ?
+     ORDER BY e.date DESC, e.createdAt DESC;`,
+    entryId
+  );
+  return rows.map((r) => ({ ...parseEntry(r), bookTitle: r.bookTitle }));
 }

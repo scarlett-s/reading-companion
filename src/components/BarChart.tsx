@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { round2 } from '@/utils';
 
 export interface BarDatum {
   label: string;
@@ -30,7 +31,7 @@ export default function BarChart({ data }: { data: BarDatum[] }) {
             </View>
             <Text style={styles.value}>
               {d.value > 0 ? '+' : ''}
-              {d.value}%
+              {round2(d.value)}%
             </Text>
           </View>
         ))

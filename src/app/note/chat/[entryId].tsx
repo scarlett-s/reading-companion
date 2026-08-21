@@ -1,11 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getEntry, getBook, getSettings, updateEntryDiscussion } from '@/db';
-import { generateSocraticQuestion, generateSocraticSummary, isSocraticEnd } from '@/ai';
+import { generateSocraticQuestion, generateSocraticSummary, isSocraticEnd, detectStopIntent, farewellFor } from '@/ai';
 import { AISettings, DiscussionTurn, ReadingEntry } from '@/types';
 
 const MAX_ROUNDS = 10;
+
+/** 监听键盘高度（iOS keyboardWillShow/Hide，Android keyboardDidShow/Hide） */
+function useKeyboardHeight(): number {
+  const [h, setH] = useState(0);
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvent, (e) => setH(e.endCoordinates.height));
+    const hide = Keyboard.addListener(hideEvent, () => setH(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return h;
+}
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -22,6 +49,7 @@ export default function ChatScreen() {
   const [error, setError] = useState('');
   const [saved, setSaved] = useState<string | null>(null);
 
+  const kbHeight = useKeyboardHeight();
   const roundCount = turns.filter((t) => t.role === 'assistant').length;
 
   useEffect(() => {
@@ -57,6 +85,13 @@ export default function ChatScreen() {
       { role: 'user', text: a },
     ];
     setTurns(next);
+
+    if (detectStopIntent(a)) {
+      const withFarewell: DiscussionTurn[] = [...next, { role: 'assistant', text: farewellFor(a) }];
+      setTurns(withFarewell);
+      await finish(withFarewell);
+      return;
+    }
 
     if (next.filter((t) => t.role === 'assistant').length >= MAX_ROUNDS) {
       await finish(next);
@@ -129,8 +164,13 @@ export default function ChatScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled">
         <View style={styles.commentBox}>
           <Text style={styles.commentLabel}>你的笔记</Text>
           <Text style={styles.commentText}>{entry?.comment}</Text>
@@ -153,7 +193,7 @@ export default function ChatScreen() {
         {saving && <Text style={styles.saving}>正在总结并保存…</Text>}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: 16 + kbHeight }]}>
         <TextInput
           style={styles.answerInput}
           value={answer}
@@ -177,7 +217,7 @@ export default function ChatScreen() {
           </Pressable>
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

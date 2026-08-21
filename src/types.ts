@@ -8,6 +8,7 @@ export interface Book {
   publishYear?: number;
   isbn?: string;
   pageCount?: number;
+  translator?: string;
   coverUrl?: string;
   status: 'reading' | 'finished';
   readCount: number; // 已读完遍数，默认 0；「正在读第 x 遍」= readCount + 1
@@ -44,6 +45,24 @@ export interface Reflection {
   bookId: string;
   content: string;
   createdAt: number;
+}
+
+/** 图书搜索结果（豆瓣 / Open Library 统一结构） */
+export interface BookSearchResult {
+  key: string;
+  title: string;
+  author: string;
+  coverUrl?: string;
+  publishYear?: number;
+  publisher?: string;
+  isbn?: string;
+  pageCount?: number;
+  translator?: string;
+}
+
+/** 一条被链接的笔记（含书名，用于双链展示） */
+export interface LinkedEntry extends ReadingEntry {
+  bookTitle: string;
 }
 
 // AI 配置（OpenAI 兼容：DeepSeek / Ollama / OpenAI 共用一条通路）

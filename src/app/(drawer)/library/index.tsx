@@ -1,5 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllBooks, getRecentBooks } from '@/db';
 import { Book } from '@/types';
@@ -31,14 +40,20 @@ export default function LibraryScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TextInput
-        style={styles.search}
-        value={query}
-        onChangeText={setQuery}
-        placeholder="搜索书库内图书"
-        autoCorrect={false}
-      />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled">
+        <TextInput
+          style={styles.search}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="搜索书库内图书"
+          autoCorrect={false}
+        />
 
       {recent.length > 0 && (
         <>
@@ -75,13 +90,15 @@ export default function LibraryScreen() {
           </Pressable>
         ))}
       </View>
-      {filtered.length === 0 && <Text style={styles.empty}>书库还没有书</Text>}
-    </ScrollView>
+        {filtered.length === 0 && <Text style={styles.empty}>书库还没有书</Text>}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  scroll: { flex: 1 },
   content: { padding: 16 },
   search: {
     borderWidth: 1,

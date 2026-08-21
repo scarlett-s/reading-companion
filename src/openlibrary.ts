@@ -1,15 +1,6 @@
-// Open Library 图书搜索（免费，无需 Key）
+// Open Library 图书搜索（免费，无需 Key；英文备选源）
 
-export interface BookSearchResult {
-  key: string;
-  title: string;
-  author: string;
-  coverUrl?: string;
-  publishYear?: number;
-  publisher?: string;
-  isbn?: string;
-  pageCount?: number;
-}
+import { BookSearchResult } from './types';
 
 interface OLDoc {
   title?: string;

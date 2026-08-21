@@ -4,6 +4,8 @@ import {
   buildSocraticMessages,
   buildSocraticSummaryMessages,
   isSocraticEnd,
+  detectStopIntent,
+  farewellFor,
 } from '../src/ai';
 
 describe('buildSynthesizeMessages（洞察报告）', () => {
@@ -62,5 +64,46 @@ describe('buildSocraticSummaryMessages', () => {
     expect(msgs[0].content).toContain('总结');
     expect(msgs[1].content).toContain('评论');
     expect(msgs[1].content).toContain('答：答');
+  });
+});
+
+describe('buildSocraticMessages 停止发问约束', () => {
+  it('强调 10 轮是上限不是目标、用户想结束即收尾', () => {
+    const sys = buildSocraticMessages('评论', [], '书')[0].content;
+    expect(sys).toContain('上限');
+    expect(sys).toContain('不是目标');
+    expect(sys).toContain('就聊到这');
+    expect(sys).toContain('下次再说');
+  });
+});
+
+describe('detectStopIntent', () => {
+  it('命中中文停止意图', () => {
+    expect(detectStopIntent('就聊到这吧')).toBe(true);
+    expect(detectStopIntent('下次再说')).toBe(true);
+    expect(detectStopIntent('不聊了')).toBe(true);
+    expect(detectStopIntent('再见')).toBe(true);
+    expect(detectStopIntent('就这样')).toBe(true);
+  });
+
+  it('命中英文停止意图', () => {
+    expect(detectStopIntent('see you next time')).toBe(true);
+    expect(detectStopIntent('bye')).toBe(true);
+    expect(detectStopIntent("let's stop here")).toBe(true);
+  });
+
+  it('普通回答不命中', () => {
+    expect(detectStopIntent('这本书让我想到很多')).toBe(false);
+    expect(detectStopIntent('我觉得作者想表达……')).toBe(false);
+    expect(detectStopIntent('')).toBe(false);
+  });
+});
+
+describe('farewellFor', () => {
+  it('含中文 → 中文告别', () => {
+    expect(farewellFor('就聊到这')).toBe('我们下次再聊！');
+  });
+  it('纯英文 → 英文告别', () => {
+    expect(farewellFor('see you')).toBe('see you next time!');
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { todayString, normalizeProgress, parseKeyPoints } from '../src/utils';
+import { todayString, normalizeProgress, parseKeyPoints, round2, entryHasAI } from '../src/utils';
 
 describe('todayString', () => {
   it('返回 YYYY-MM-DD 格式', () => {
@@ -43,5 +43,33 @@ describe('parseKeyPoints', () => {
   it('兼容中文顿号与括号编号', () => {
     const text = '1、要点A\n2) 要点B';
     expect(parseKeyPoints(text)).toEqual(['要点A', '要点B']);
+  });
+});
+
+describe('round2', () => {
+  it('四舍五入到 2 位小数', () => {
+    expect(round2(12.3456789)).toBe(12.35);
+    expect(round2(3.14159)).toBe(3.14);
+    expect(round2(-2.678)).toBe(-2.68);
+    expect(round2(0)).toBe(0);
+    expect(round2(5)).toBe(5);
+  });
+});
+
+describe('entryHasAI', () => {
+  it('mode === "chat" 返回 true', () => {
+    expect(entryHasAI({ id: '1', bookId: 'b', date: '2026-08-21', comment: 'x', mode: 'chat', createdAt: 0 })).toBe(true);
+  });
+  it('discussion 非空返回 true', () => {
+    expect(
+      entryHasAI({
+        id: '1', bookId: 'b', date: '2026-08-21', comment: 'x', mode: 'plain',
+        discussion: [{ role: 'assistant', text: 'q' }, { role: 'user', text: 'a' }],
+        createdAt: 0,
+      })
+    ).toBe(true);
+  });
+  it('纯 plain + 无 discussion 返回 false', () => {
+    expect(entryHasAI({ id: '1', bookId: 'b', date: '2026-08-21', comment: 'x', mode: 'plain', createdAt: 0 })).toBe(false);
   });
 });

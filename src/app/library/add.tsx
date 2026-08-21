@@ -1,10 +1,23 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { searchBooks, BookSearchResult } from '@/openlibrary';
+import { searchBooks as searchOpenLibrary } from '@/openlibrary';
+import { searchBooks as searchDouban, fetchDoubanDetail } from '@/douban';
 import { addBook, generateId } from '@/db';
-import { Book } from '@/types';
+import { Book, BookSearchResult } from '@/types';
 import BookCover from '@/components/BookCover';
+
+type Source = 'douban' | 'openlibrary';
 
 export default function AddBookScreen() {
   const router = useRouter();
@@ -13,6 +26,7 @@ export default function AddBookScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [manual, setManual] = useState(false);
+  const [source, setSource] = useState<Source>('douban');
   const [mTitle, setMTitle] = useState('');
   const [mAuthor, setMAuthor] = useState('');
   const [mPages, setMPages] = useState('');
@@ -22,7 +36,7 @@ export default function AddBookScreen() {
     setLoading(true);
     setError('');
     try {
-      const r = await searchBooks(query.trim());
+      const r = source === 'douban' ? await searchDouban(query.trim()) : await searchOpenLibrary(query.trim());
       setResults(r);
       if (r.length === 0) setError('没有找到结果，可手动录入');
     } catch (e) {
@@ -33,15 +47,21 @@ export default function AddBookScreen() {
   }
 
   async function pick(result: BookSearchResult) {
+    // 豆瓣先快速回填搜索结果字段，再后台拉详情补 出版社/译者/页数/出版年
+    let r = result;
+    if (source === 'douban') {
+      r = await fetchDoubanDetail(result.key, result);
+    }
     const book: Book = {
       id: generateId(),
-      title: result.title,
-      author: result.author || '未知作者',
-      publisher: result.publisher,
-      publishYear: result.publishYear,
-      isbn: result.isbn,
-      pageCount: result.pageCount,
-      coverUrl: result.coverUrl,
+      title: r.title,
+      author: r.author || '未知作者',
+      publisher: r.publisher,
+      publishYear: r.publishYear,
+      isbn: r.isbn,
+      pageCount: r.pageCount,
+      translator: r.translator,
+      coverUrl: r.coverUrl,
       status: 'reading',
       readCount: 0,
       createdAt: Date.now(),
@@ -66,7 +86,9 @@ export default function AddBookScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.searchRow}>
         <TextInput
           style={styles.input}
@@ -79,6 +101,19 @@ export default function AddBookScreen() {
         />
         <Pressable style={styles.searchBtn} onPress={onSearch}>
           <Text style={styles.searchText}>搜索</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.sourceRow}>
+        <Pressable
+          style={[styles.sourceBtn, source === 'douban' && styles.sourceActive]}
+          onPress={() => setSource('douban')}>
+          <Text style={[styles.sourceText, source === 'douban' && styles.sourceTextActive]}>豆瓣</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.sourceBtn, source === 'openlibrary' && styles.sourceActive]}
+          onPress={() => setSource('openlibrary')}>
+          <Text style={[styles.sourceText, source === 'openlibrary' && styles.sourceTextActive]}>Open Library</Text>
         </Pressable>
       </View>
 
@@ -125,7 +160,7 @@ export default function AddBookScreen() {
           </Pressable>
         )}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -148,6 +183,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   searchText: { color: '#fff', fontWeight: '600' },
+  sourceRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  sourceBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#f7f7f7',
+  },
+  sourceActive: { backgroundColor: '#7CB342', borderColor: '#7CB342' },
+  sourceText: { fontSize: 14, color: '#555' },
+  sourceTextActive: { color: '#fff', fontWeight: '600' },
   saveBtn: {
     backgroundColor: '#208AEF',
     borderRadius: 8,

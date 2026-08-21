@@ -1,5 +1,7 @@
 // 纯工具函数：不依赖 React Native / 网络，便于单测
 
+import { ReadingEntry } from './types';
+
 /** 今天的本地日期，格式 YYYY-MM-DD */
 export function todayString(): string {
   const d = new Date();
@@ -9,8 +11,37 @@ export function todayString(): string {
   return `${y}-${m}-${day}`;
 }
 
+/** 笔记是否有 AI 对话记录（用于菜单项禁用 + 卡片 AI 标记） */
+export function entryHasAI(e: ReadingEntry): boolean {
+  if (e.mode === 'chat') return true;
+  return !!(e.discussion && e.discussion.length > 0);
+}
+
+/** 笔记字数（含对话） */
+export function entryCharCount(e: ReadingEntry): number {
+  let n = e.comment?.length ?? 0;
+  if (e.discussion) for (const t of e.discussion) n += t.text?.length ?? 0;
+  return n;
+}
+
+/** 时间戳(ms) → 'YYYY-MM-DD HH:MM'（本地时区） */
+export function tsToDateTime(ts: number): string {
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
+}
+
+/** 四舍五入到 2 位小数（去除浮点尾差，如 12.340000000000001 → 12.34） */
+export function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
 /**
