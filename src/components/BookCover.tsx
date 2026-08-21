@@ -1,12 +1,18 @@
-import { Image } from 'expo-image';
+import { Image, type ImageSource } from 'expo-image';
 import { View, Text, StyleSheet } from 'react-native';
 
-/** 书籍封面，无封面时显示占位符 */
+/** 书籍封面，无封面时显示占位符；豆瓣图床需要带 Referer 防盗链头 */
 export default function BookCover({ url, size = 56 }: { url?: string; size?: number }) {
+  let source: ImageSource | undefined;
+  if (url) {
+    source = url.includes('doubanio.com')
+      ? { uri: url, headers: { Referer: 'https://book.douban.com/' } }
+      : { uri: url };
+  }
   return (
     <View style={[styles.box, { width: size, height: Math.round(size * 1.4) }]}>
-      {url ? (
-        <Image source={{ uri: url }} style={styles.img} contentFit="cover" transition={100} />
+      {source ? (
+        <Image source={source} style={styles.img} contentFit="cover" transition={100} />
       ) : (
         <View style={styles.placeholder}>
           <Text style={{ fontSize: size * 0.4 }}>📖</Text>

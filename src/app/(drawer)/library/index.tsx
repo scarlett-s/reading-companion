@@ -65,6 +65,11 @@ export default function LibraryScreen() {
                 <Text style={styles.gridTitle} numberOfLines={1}>
                   {b.title}
                 </Text>
+                {!!b.publisher && (
+                  <Text style={styles.gridPublisher} numberOfLines={1}>
+                    {b.publisher}
+                  </Text>
+                )}
               </Pressable>
             ))}
           </View>
@@ -87,6 +92,11 @@ export default function LibraryScreen() {
             <Text style={styles.gridTitle} numberOfLines={1}>
               {b.title}
             </Text>
+            {!!b.publisher && (
+              <Text style={styles.gridPublisher} numberOfLines={1}>
+                {b.publisher}
+              </Text>
+            )}
           </Pressable>
         ))}
       </View>
@@ -113,6 +123,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 16 },
   gridItem: { width: '33.33%', alignItems: 'center', gap: 6 },
   gridTitle: { fontSize: 13, color: '#333' },
+  gridPublisher: { fontSize: 11, color: '#999' },
   addCard: {
     width: 88,
     height: 88,

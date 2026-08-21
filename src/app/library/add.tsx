@@ -152,9 +152,10 @@ export default function AddBookScreen() {
               <Text style={styles.rowTitle} numberOfLines={2}>
                 {item.title}
               </Text>
-              <Text style={styles.rowAuthor}>
+              <Text style={styles.rowAuthor} numberOfLines={1}>
                 {item.author}
                 {item.publishYear ? ` · ${item.publishYear}` : ''}
+                {item.publisher ? ` · ${item.publisher}` : ''}
               </Text>
             </View>
           </Pressable>
