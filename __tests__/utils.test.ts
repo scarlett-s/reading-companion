@@ -57,19 +57,33 @@ describe('round2', () => {
 });
 
 describe('entryHasAI', () => {
-  it('mode === "chat" 返回 true', () => {
-    expect(entryHasAI({ id: '1', bookId: 'b', date: '2026-08-21', comment: 'x', mode: 'chat', createdAt: 0 })).toBe(true);
+  it('仅 mode=chat 但无对话 → false', () => {
+    expect(entryHasAI({ id: '1', bookId: 'b', date: '2026-01-01', comment: 'c', mode: 'chat', createdAt: 0 })).toBe(false);
   });
-  it('discussion 非空返回 true', () => {
+  it('discussion 有内容 → true', () => {
     expect(
       entryHasAI({
-        id: '1', bookId: 'b', date: '2026-08-21', comment: 'x', mode: 'plain',
-        discussion: [{ role: 'assistant', text: 'q' }, { role: 'user', text: 'a' }],
+        id: '1',
+        bookId: 'b',
+        date: '2026-01-01',
+        comment: 'c',
+        mode: 'plain',
+        discussion: [{ role: 'assistant', text: 'a' }],
         createdAt: 0,
       })
-    ).toBe(true);
+      ).toBe(true);
   });
-  it('纯 plain + 无 discussion 返回 false', () => {
-    expect(entryHasAI({ id: '1', bookId: 'b', date: '2026-08-21', comment: 'x', mode: 'plain', createdAt: 0 })).toBe(false);
+  it('discussion 为空数组 → false', () => {
+    expect(
+      entryHasAI({
+        id: '1',
+        bookId: 'b',
+        date: '2026-01-01',
+        comment: 'c',
+        mode: 'chat',
+        discussion: [],
+        createdAt: 0,
+      })
+      ).toBe(false);
   });
 });

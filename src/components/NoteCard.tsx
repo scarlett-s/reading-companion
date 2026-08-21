@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 export interface NoteCardProps {
@@ -5,12 +6,13 @@ export interface NoteCardProps {
   date: string;
   comment: string;
   progress?: string;
+  aiSummary?: string;
   expanded: boolean;
   hasAI: boolean;
-  onPress: () => void;
-  onPressBook: () => void;
   onToggleExpand: () => void;
-  onOpenMenu: () => void;
+  onPressBook: () => void;
+  onOpenMenu: (anchorRef: React.RefObject<View | null>) => void;
+  onPressAI: () => void;
 }
 
 export default function NoteCard({
@@ -18,26 +20,32 @@ export default function NoteCard({
   date,
   comment,
   progress,
+  aiSummary,
   expanded,
   hasAI,
-  onPress,
-  onPressBook,
   onToggleExpand,
+  onPressBook,
   onOpenMenu,
+  onPressAI,
 }: NoteCardProps) {
-  const truncated = comment.length > 80 || comment.includes('\n');
+  const long = comment.length > 80 || comment.includes('\n');
+  const menuRef = useRef<View>(null);
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable style={styles.card} onPress={onToggleExpand}>
       <View style={styles.head}>
         <View style={styles.headLeft}>
           <Text style={styles.date}>{date}</Text>
-          <Pressable onPress={onPressBook} hitSlop={6} style={styles.titleWrap}>
+          <Pressable onPress={onPressBook} hitSlop={6}>
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
           </Pressable>
         </View>
-        <Pressable hitSlop={10} onPress={onOpenMenu} style={styles.menuBtn}>
+        <Pressable
+          ref={menuRef}
+          hitSlop={10}
+          onPress={() => onOpenMenu(menuRef)}
+          style={styles.menuBtn}>
           <Text style={styles.menuIcon}>⋯</Text>
         </Pressable>
       </View>
@@ -48,22 +56,26 @@ export default function NoteCard({
         {comment}
       </Text>
 
-      {truncated && (
-        <Pressable onPress={onToggleExpand} hitSlop={6}>
-          <Text style={styles.expandText}>{expanded ? '收起' : '展开'}</Text>
-        </Pressable>
+      {expanded && !!aiSummary && (
+        <View style={styles.summary}>
+          <Text style={styles.summaryLabel}>AI 总结</Text>
+          <Text style={styles.summaryText}>{aiSummary}</Text>
+        </View>
       )}
 
-      <View style={styles.footer}>
-        {hasAI ? (
-          <View style={[styles.aiBadge, styles.aiActive]}>
-            <Text style={styles.aiTextActive}>AI</Text>
-          </View>
+      <View style={styles.footerRow}>
+        {long ? (
+          <Pressable onPress={onToggleExpand} hitSlop={6}>
+            <Text style={styles.expandText}>{expanded ? '收起' : '展开'}</Text>
+          </Pressable>
         ) : (
-          <View style={[styles.aiBadge, styles.aiInactive]}>
-            <Text style={styles.aiTextInactive}>AI</Text>
-          </View>
+          <View />
         )}
+        <Pressable onPress={onPressAI} disabled={!hasAI} hitSlop={6}>
+          <View style={[styles.aiBadge, hasAI ? styles.aiActive : styles.aiInactive]}>
+            <Text style={styles.aiText}>AI</Text>
+          </View>
+        </Pressable>
       </View>
     </Pressable>
   );
@@ -83,22 +95,19 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   headLeft: { flex: 1, marginRight: 8, gap: 4 },
-  titleWrap: {},
   title: { fontSize: 16, fontWeight: '600', color: '#208AEF' },
   date: { fontSize: 12, color: '#999' },
   menuBtn: { paddingHorizontal: 4, paddingVertical: 2 },
   menuIcon: { fontSize: 20, color: '#888', lineHeight: 22 },
   progress: { fontSize: 13, color: '#208AEF' },
-  comment: { fontSize: 15, lineHeight: 24, color: '#222' },
+  comment: { fontSize: 15, lineHeight: 27, color: '#222' },
+  summary: { backgroundColor: '#f4f6f8', borderRadius: 10, padding: 12, gap: 4 },
+  summaryLabel: { fontSize: 12, color: '#888' },
+  summaryText: { fontSize: 14, lineHeight: 21 },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   expandText: { fontSize: 14, color: '#208AEF', fontWeight: '500' },
-  footer: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 },
-  aiBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
+  aiBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 9 },
   aiActive: { backgroundColor: '#7CB342' },
   aiInactive: { backgroundColor: '#dcdcdc' },
-  aiTextActive: { fontSize: 11, color: '#fff', fontWeight: '700' },
-  aiTextInactive: { fontSize: 11, color: '#fff', fontWeight: '700' },
+  aiText: { fontSize: 12, color: '#fff', fontWeight: '700' },
 });

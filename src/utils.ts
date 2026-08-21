@@ -11,9 +11,8 @@ export function todayString(): string {
   return `${y}-${m}-${day}`;
 }
 
-/** 笔记是否有 AI 对话记录（用于菜单项禁用 + 卡片 AI 标记） */
+/** 笔记是否有 AI 对话记录（仅当存在实际对话条目时；菜单项禁用 + 卡片 AI 标记） */
 export function entryHasAI(e: ReadingEntry): boolean {
-  if (e.mode === 'chat') return true;
   return !!(e.discussion && e.discussion.length > 0);
 }
 
