@@ -99,16 +99,34 @@ export default function NoteCard({
 
         {progress ? <Text style={styles.progress}>{progress}</Text> : null}
 
-        <TextInput
-          style={styles.editComment}
-          value={draftComment}
-          onChangeText={setDraftComment}
-          placeholder="现在的想法"
-          placeholderTextColor="#999"
-          multiline
-          autoFocus
-          textAlignVertical="top"
-        />
+        <View style={styles.editCommentWrap}>
+          {/* 高亮层：与展示态同款内联标签样式 */}
+          <Text style={styles.editCommentText}>
+            {segmentTags(draftComment).map((seg, i) =>
+              seg.tag ? (
+                <Text key={i} style={styles.tagInline}>
+                  {seg.text}
+                </Text>
+              ) : (
+                seg.text
+              )
+            )}
+          </Text>
+          {/* 输入层：透明文字，仅显示光标，保证标签高亮与文字对齐 */}
+          <TextInput
+            style={styles.editCommentInput}
+            value={draftComment}
+            onChangeText={setDraftComment}
+            placeholder="现在的想法"
+            placeholderTextColor="#999"
+            multiline
+            autoFocus
+            textAlignVertical="top"
+            scrollEnabled={false}
+            selectionColor="#208AEF"
+            cursorColor="#208AEF"
+          />
+        </View>
 
         <View style={styles.editActions}>
           <Pressable onPress={onCancelEdit} hitSlop={8} style={styles.cancelBtn}>
@@ -214,7 +232,6 @@ const styles = StyleSheet.create({
     color: '#4a7c9a',
     backgroundColor: '#eef3f8',
     borderRadius: 6,
-    paddingHorizontal: 4,
   },
   summary: { backgroundColor: '#f4f6f8', borderRadius: 10, padding: 12, gap: 4 },
   summaryLabel: { fontSize: 12, color: '#888' },
@@ -226,13 +243,20 @@ const styles = StyleSheet.create({
   aiAvailable: { backgroundColor: '#7CB342' },
   aiUsed: { backgroundColor: '#dcdcdc' },
   aiText: { fontSize: 12, color: '#fff', fontWeight: '700' },
-  // 编辑态：白底，只改正文
-  editComment: {
+  // 编辑态：白底，只改正文；输入层透明 + 高亮层内联标签
+  editCommentWrap: { position: 'relative', minHeight: 100 },
+  editCommentText: { fontSize: 15, lineHeight: 27, color: '#222' },
+  editCommentInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     fontSize: 15,
     lineHeight: 27,
-    color: '#222',
-    minHeight: 100,
+    color: 'transparent',
     padding: 0,
+    textAlignVertical: 'top',
   },
   editActions: {
     flexDirection: 'row',
