@@ -8,6 +8,8 @@ import {
   Modal,
   Dimensions,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllEntries, getAllBooks, updateEntry } from '@/db';
@@ -114,7 +116,9 @@ export default function HomeScreen() {
   const showFloatingCollapse = anyExpanded && anyCollapseOffScreen;
 
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -215,7 +219,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

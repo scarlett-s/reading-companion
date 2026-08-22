@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { todayString, normalizeProgress, parseKeyPoints, round2, entryHasAI, formatProgress, parseTags } from '../src/utils';
+import { todayString, normalizeProgress, parseKeyPoints, round2, entryHasAI, formatProgress, parseTags, segmentTags } from '../src/utils';
 
 describe('todayString', () => {
   it('返回 YYYY-MM-DD 格式', () => {
@@ -89,6 +89,27 @@ describe('parseTags', () => {
   });
   it('无标签返回空数组', () => {
     expect(parseTags('普通正文')).toEqual([]);
+  });
+});
+
+describe('segmentTags', () => {
+  it('把正文按 # 标签切成段落', () => {
+    expect(segmentTags('今天 #哲学 很 #人生 启发')).toEqual([
+      { text: '今天 ', tag: false },
+      { text: '#哲学', tag: true },
+      { text: ' 很 ', tag: false },
+      { text: '#人生', tag: true },
+      { text: ' 启发', tag: false },
+    ]);
+  });
+  it('行首标签也算', () => {
+    expect(segmentTags('#读书 笔记')).toEqual([
+      { text: '#读书', tag: true },
+      { text: ' 笔记', tag: false },
+    ]);
+  });
+  it('# 前无空格不识别', () => {
+    expect(segmentTags('我喜欢#读书')).toEqual([{ text: '我喜欢#读书', tag: false }]);
   });
 });
 

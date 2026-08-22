@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { ReadingEntry } from '@/types';
-import { formatProgress, parseTags } from '@/utils';
+import { formatProgress, segmentTags } from '@/utils';
 
 export interface NoteCardProps {
   entry: ReadingEntry;
@@ -58,7 +58,6 @@ export default function NoteCard({
 
   const comment = entry.comment;
   const progress = formatProgress(entry);
-  const tags = parseTags(comment);
   const aiSummary = entry.aiSummary;
   const long = comment.length > 80 || comment.includes('\n');
 
@@ -152,18 +151,16 @@ export default function NoteCard({
 
         {progress ? <Text style={styles.progress}>{progress}</Text> : null}
 
-        {tags.length > 0 && (
-          <View style={styles.tagWrap}>
-            {tags.map((t) => (
-              <View key={t} style={styles.tag}>
-                <Text style={styles.tagText}>#{t}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
         <Text style={styles.comment} numberOfLines={expanded ? undefined : 4}>
-          {comment}
+          {segmentTags(comment).map((seg, i) =>
+            seg.tag ? (
+              <Text key={i} style={styles.tagInline}>
+                {seg.text}
+              </Text>
+            ) : (
+              seg.text
+            )
+          )}
         </Text>
 
         {expanded && !!aiSummary && (
@@ -213,14 +210,12 @@ const styles = StyleSheet.create({
   menuIcon: { fontSize: 20, color: '#888', lineHeight: 22 },
   progress: { fontSize: 13, color: '#208AEF' },
   comment: { fontSize: 15, lineHeight: 27, color: '#222' },
-  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: {
+  tagInline: {
+    color: '#4a7c9a',
     backgroundColor: '#eef3f8',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    borderRadius: 6,
+    paddingHorizontal: 4,
   },
-  tagText: { fontSize: 13, color: '#4a7c9a' },
   summary: { backgroundColor: '#f4f6f8', borderRadius: 10, padding: 12, gap: 4 },
   summaryLabel: { fontSize: 12, color: '#888' },
   summaryText: { fontSize: 14, lineHeight: 21 },

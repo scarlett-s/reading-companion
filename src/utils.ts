@@ -30,20 +30,42 @@ export function formatProgress(e: ReadingEntry): string {
   return '';
 }
 
+export interface TagSegment {
+  text: string;
+  tag: boolean;
+}
+
 /**
- * 从正文中识别标签：#xxx 前有空格（或位于行首）、后跟空格（或行尾）即视为标签。
- * 去重，按出现顺序返回。
+ * 把正文按 #标签 切成段落：tag 段含 '#'（如 '#哲学'），非 tag 段为普通文本。
+ * 规则：# 前有空格（或位于行首）、后跟非空白字符，直到空格/行尾结束。
+ * 供卡片把标签内联高亮在正文里。
  */
-export function parseTags(text: string): string[] {
-  const re = /(?:^|\s)#([^\s#]+)/g;
-  const out: string[] = [];
-  const seen = new Set<string>();
+export function segmentTags(text: string): TagSegment[] {
+  const re = /(?:^|\s)(#[^\s#]+)/g;
+  const segments: TagSegment[] = [];
+  let last = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const tag = m[1];
-    if (!seen.has(tag)) {
-      seen.add(tag);
-      out.push(tag);
+    const tagStart = m.index + (m[0].length - tag.length);
+    if (tagStart > last) segments.push({ text: text.slice(last, tagStart), tag: false });
+    segments.push({ text: tag, tag: true });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) segments.push({ text: text.slice(last), tag: false });
+  return segments;
+}
+
+/** 从正文中识别标签名（不含 '#'，去重，按出现顺序返回） */
+export function parseTags(text: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const seg of segmentTags(text)) {
+    if (!seg.tag) continue;
+    const name = seg.text.slice(1);
+    if (!seen.has(name)) {
+      seen.add(name);
+      out.push(name);
     }
   }
   return out;
