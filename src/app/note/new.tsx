@@ -35,8 +35,6 @@ export default function NewNoteScreen() {
   const [unitMenuOpen, setUnitMenuOpen] = useState(false);
   const [progressValue, setProgressValue] = useState('');
   const [comment, setComment] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
 
   useFocusEffect(
@@ -64,7 +62,6 @@ export default function NewNoteScreen() {
         setProgressValue(String(e.currentPage));
       }
       setComment(e.comment);
-      setTags(e.tags ?? []);
     })();
   }, [entryId]);
 
@@ -81,17 +78,6 @@ export default function NewNoteScreen() {
     setBookQuery(b.title);
   }
 
-  function addTag() {
-    const t = tagInput.trim();
-    if (!t) return;
-    if (!tags.includes(t)) setTags((prev) => [...prev, t]);
-    setTagInput('');
-  }
-
-  function removeTag(t: string) {
-    setTags((prev) => prev.filter((x) => x !== t));
-  }
-
   const commentFilled = comment.trim().length > 0;
 
   async function submit() {
@@ -103,7 +89,6 @@ export default function NewNoteScreen() {
         currentPage: unit === 'page' && progressValue.trim() ? Number(progressValue) : undefined,
         progressPercent: unit === 'percent' && progressValue.trim() ? Number(progressValue) : undefined,
         comment: comment.trim(),
-        tags,
       });
       Keyboard.dismiss();
       router.back();
@@ -119,7 +104,6 @@ export default function NewNoteScreen() {
       progressPercent: unit === 'percent' && progressValue.trim() ? Number(progressValue) : undefined,
       comment: comment.trim(),
       mode: 'plain',
-      tags,
       createdAt: Date.now(),
     });
     Keyboard.dismiss();
@@ -236,27 +220,6 @@ export default function NewNoteScreen() {
           textAlignVertical="top"
           inputAccessoryViewID={Platform.OS === 'ios' ? SUBMIT_ID : undefined}
         />
-
-        <View style={styles.tagField}>
-          <Text style={styles.tagLabel}>标签</Text>
-          <View style={styles.tagWrap}>
-            {tags.map((t) => (
-              <Pressable key={t} style={styles.tag} onPress={() => removeTag(t)} hitSlop={4}>
-                <Text style={styles.tagText}>#{t}</Text>
-                <Text style={styles.tagRemove}>×</Text>
-              </Pressable>
-            ))}
-            <TextInput
-              style={styles.tagInput}
-              value={tagInput}
-              onChangeText={setTagInput}
-              onSubmitEditing={addTag}
-              placeholder="添加标签"
-              placeholderTextColor="#888"
-              returnKeyType="done"
-            />
-          </View>
-        </View>
       </ScrollView>
 
       {accessory}
@@ -358,30 +321,6 @@ const styles = StyleSheet.create({
     color: '#222',
     flex: 1,
   },
-  tagField: { gap: 8 },
-  tagLabel: { fontSize: 13, color: '#888' },
-  tagWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: CARD_RADIUS,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: '#eef3f8',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  tagText: { fontSize: 13, color: '#4a7c9a' },
-  tagRemove: { fontSize: 15, color: '#999', marginLeft: 2 },
-  tagInput: { flex: 1, minWidth: 100, paddingVertical: 6, fontSize: 14, color: '#222' },
   accessory: {
     flexDirection: 'row',
     alignItems: 'center',

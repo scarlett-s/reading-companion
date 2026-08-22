@@ -60,10 +60,10 @@ export default function HomeScreen() {
       currentPage: n.entry.currentPage,
       progressPercent: n.entry.progressPercent,
       comment,
-      tags: n.entry.tags,
     });
     Keyboard.dismiss();
     setEditingId(null);
+    setExpanded((prev) => ({ ...prev, [id]: true }));
     load();
   }
 
@@ -148,6 +148,7 @@ export default function HomeScreen() {
               onCancelEdit={() => {
                 Keyboard.dismiss();
                 setEditingId(null);
+                setExpanded((prev) => ({ ...prev, [n.id]: true }));
               }}
               onLayoutReport={onCardLayout}
             />

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { ReadingEntry } from '@/types';
-import { formatProgress } from '@/utils';
+import { formatProgress, parseTags } from '@/utils';
 
 export interface NoteCardProps {
   entry: ReadingEntry;
@@ -58,6 +58,7 @@ export default function NoteCard({
 
   const comment = entry.comment;
   const progress = formatProgress(entry);
+  const tags = parseTags(comment);
   const aiSummary = entry.aiSummary;
   const long = comment.length > 80 || comment.includes('\n');
 
@@ -151,19 +152,19 @@ export default function NoteCard({
 
         {progress ? <Text style={styles.progress}>{progress}</Text> : null}
 
-        <Text style={styles.comment} numberOfLines={expanded ? undefined : 4}>
-          {comment}
-        </Text>
-
-        {!!entry.tags && entry.tags.length > 0 && (
+        {tags.length > 0 && (
           <View style={styles.tagWrap}>
-            {entry.tags.map((t) => (
+            {tags.map((t) => (
               <View key={t} style={styles.tag}>
                 <Text style={styles.tagText}>#{t}</Text>
               </View>
             ))}
           </View>
         )}
+
+        <Text style={styles.comment} numberOfLines={expanded ? undefined : 4}>
+          {comment}
+        </Text>
 
         {expanded && !!aiSummary && (
           <View style={styles.summary}>

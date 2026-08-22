@@ -30,6 +30,25 @@ export function formatProgress(e: ReadingEntry): string {
   return '';
 }
 
+/**
+ * 从正文中识别标签：#xxx 前有空格（或位于行首）、后跟空格（或行尾）即视为标签。
+ * 去重，按出现顺序返回。
+ */
+export function parseTags(text: string): string[] {
+  const re = /(?:^|\s)#([^\s#]+)/g;
+  const out: string[] = [];
+  const seen = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const tag = m[1];
+    if (!seen.has(tag)) {
+      seen.add(tag);
+      out.push(tag);
+    }
+  }
+  return out;
+}
+
 /** 时间戳(ms) → 'YYYY-MM-DD HH:MM'（本地时区） */
 export function tsToDateTime(ts: number): string {
   const d = new Date(ts);

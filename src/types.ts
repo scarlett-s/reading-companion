@@ -37,7 +37,6 @@ export interface ReadingEntry {
   aiKeyPoints?: string[]; // 旧「提炼要点」，将被 aiSummary 取代
   aiSummary?: string; // 苏格拉底对话结束时 AI 给的总结
   discussion?: DiscussionTurn[]; // 对话记录
-  tags?: string[]; // 用户标记的标签
   createdAt: number;
 }
 
