@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Modal,
   Dimensions,
+  Keyboard,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllEntries, getAllBooks, updateEntry } from '@/db';
@@ -61,6 +62,7 @@ export default function HomeScreen() {
       comment,
       tags: n.entry.tags,
     });
+    Keyboard.dismiss();
     setEditingId(null);
     load();
   }
@@ -115,6 +117,7 @@ export default function HomeScreen() {
     <View style={styles.root}>
       <ScrollView
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
         onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
         onScroll={(e) => setScrollOffset(e.nativeEvent.contentOffset.y)}
         scrollEventThrottle={16}>
@@ -142,7 +145,10 @@ export default function HomeScreen() {
               }}
               onStartEdit={() => setEditingId(n.id)}
               onSaveEdit={(comment) => saveEdit(n.id, comment)}
-              onCancelEdit={() => setEditingId(null)}
+              onCancelEdit={() => {
+                Keyboard.dismiss();
+                setEditingId(null);
+              }}
               onLayoutReport={onCardLayout}
             />
           ))

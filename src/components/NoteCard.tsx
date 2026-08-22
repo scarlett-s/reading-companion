@@ -97,6 +97,8 @@ export default function NoteCard({
           </View>
         </View>
 
+        {progress ? <Text style={styles.progress}>{progress}</Text> : null}
+
         <TextInput
           style={styles.editComment}
           value={draftComment}

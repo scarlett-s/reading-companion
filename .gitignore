@@ -29,5 +29,8 @@ yarn-error.*
 # macOS
 .DS_Store
 
+# 设计参考图（不纳入版本管理）
+UI[ ]
+
 # local tooling
 .claude/
