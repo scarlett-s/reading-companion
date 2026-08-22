@@ -3,14 +3,6 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { ReadingEntry } from '@/types';
 import { formatProgress } from '@/utils';
 
-/** 内联编辑提交的字段 */
-export interface EditFields {
-  comment: string;
-  currentPage?: number;
-  progressPercent?: number;
-  tags: string[];
-}
-
 export interface NoteCardProps {
   entry: ReadingEntry;
   title: string;
@@ -22,14 +14,12 @@ export interface NoteCardProps {
   onOpenMenu: (anchorRef: React.RefObject<View | null>) => void;
   onPressAI: () => void;
   onStartEdit: () => void;
-  onSaveEdit: (fields: EditFields) => void;
+  onSaveEdit: (comment: string) => void;
   onCancelEdit: () => void;
   /** 报告卡片在滚动容器里的 y 与高度（相对 content 原点），供父页面计算是否滚出屏幕 */
   onLayoutReport?: (id: string, y: number, height: number) => void;
   cardId: string;
 }
-
-type Unit = 'page' | 'percent';
 
 export default function NoteCard({
   entry,
@@ -52,28 +42,11 @@ export default function NoteCard({
   const lastTapRef = useRef(0);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 编辑态草稿
+  // 编辑态草稿（只编辑正文）
   const [draftComment, setDraftComment] = useState('');
-  const [draftUnit, setDraftUnit] = useState<Unit>('page');
-  const [draftProgress, setDraftProgress] = useState('');
-  const [draftTags, setDraftTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
-    if (!editing) return;
-    setDraftComment(entry.comment);
-    if (entry.progressPercent != null) {
-      setDraftUnit('percent');
-      setDraftProgress(String(entry.progressPercent));
-    } else if (entry.currentPage != null) {
-      setDraftUnit('page');
-      setDraftProgress(String(entry.currentPage));
-    } else {
-      setDraftUnit('page');
-      setDraftProgress('');
-    }
-    setDraftTags(entry.tags ?? []);
-    setTagInput('');
+    if (editing) setDraftComment(entry.comment);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing]);
 
@@ -107,27 +80,7 @@ export default function NoteCard({
     }
   }
 
-  function save() {
-    onSaveEdit({
-      comment: draftComment.trim(),
-      currentPage: draftUnit === 'page' && draftProgress.trim() ? Number(draftProgress) : undefined,
-      progressPercent: draftUnit === 'percent' && draftProgress.trim() ? Number(draftProgress) : undefined,
-      tags: draftTags,
-    });
-  }
-
-  function addTag() {
-    const t = tagInput.trim();
-    if (!t) return;
-    if (!draftTags.includes(t)) setDraftTags((prev) => [...prev, t]);
-    setTagInput('');
-  }
-
-  function removeTag(t: string) {
-    setDraftTags((prev) => prev.filter((x) => x !== t));
-  }
-
-  // ===== 编辑态：卡片内直接编辑 =====
+  // ===== 编辑态：卡片内直接编辑正文（白底，只改评论） =====
   if (editing) {
     return (
       <View
@@ -144,24 +97,6 @@ export default function NoteCard({
           </View>
         </View>
 
-        <View style={styles.progressPill}>
-          <TextInput
-            style={styles.progressInput}
-            value={draftProgress}
-            onChangeText={setDraftProgress}
-            placeholder="阅读进度"
-            placeholderTextColor="#999"
-            keyboardType="number-pad"
-          />
-          <View style={styles.progressDivider} />
-          <Pressable
-            style={styles.unitToggle}
-            onPress={() => setDraftUnit((u) => (u === 'page' ? 'percent' : 'page'))}
-            hitSlop={6}>
-            <Text style={styles.unitText}>{draftUnit === 'page' ? '页' : '%'}</Text>
-          </Pressable>
-        </View>
-
         <TextInput
           style={styles.editComment}
           value={draftComment}
@@ -173,30 +108,12 @@ export default function NoteCard({
           textAlignVertical="top"
         />
 
-        <View style={styles.tagWrap}>
-          {draftTags.map((t) => (
-            <Pressable key={t} style={styles.tag} onPress={() => removeTag(t)} hitSlop={4}>
-              <Text style={styles.tagText}>#{t}</Text>
-              <Text style={styles.tagRemove}>×</Text>
-            </Pressable>
-          ))}
-          <TextInput
-            style={styles.tagInput}
-            value={tagInput}
-            onChangeText={setTagInput}
-            onSubmitEditing={addTag}
-            placeholder="添加标签"
-            placeholderTextColor="#999"
-            returnKeyType="done"
-          />
-        </View>
-
         <View style={styles.editActions}>
           <Pressable onPress={onCancelEdit} hitSlop={8} style={styles.cancelBtn}>
             <Text style={styles.cancelText}>取消</Text>
           </Pressable>
           <Pressable
-            onPress={save}
+            onPress={() => onSaveEdit(draftComment.trim())}
             disabled={!draftComment.trim()}
             style={[styles.saveBtn, !draftComment.trim() && styles.saveDisabled]}>
             <Text style={styles.saveText}>保存</Text>
@@ -293,18 +210,14 @@ const styles = StyleSheet.create({
   menuIcon: { fontSize: 20, color: '#888', lineHeight: 22 },
   progress: { fontSize: 13, color: '#208AEF' },
   comment: { fontSize: 15, lineHeight: 27, color: '#222' },
-  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
     backgroundColor: '#eef3f8',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
   tagText: { fontSize: 13, color: '#4a7c9a' },
-  tagRemove: { fontSize: 15, color: '#999', marginLeft: 2 },
   summary: { backgroundColor: '#f4f6f8', borderRadius: 10, padding: 12, gap: 4 },
   summaryLabel: { fontSize: 12, color: '#888' },
   summaryText: { fontSize: 14, lineHeight: 21 },
@@ -315,28 +228,14 @@ const styles = StyleSheet.create({
   aiAvailable: { backgroundColor: '#7CB342' },
   aiUsed: { backgroundColor: '#dcdcdc' },
   aiText: { fontSize: 12, color: '#fff', fontWeight: '700' },
-  // 编辑态
-  progressPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f4f6f8',
-    borderRadius: 12,
-    paddingLeft: 14,
-  },
-  progressInput: { flex: 1, paddingVertical: 10, fontSize: 15, color: '#222' },
-  progressDivider: { width: 1, height: 20, backgroundColor: '#e0e0e0', marginHorizontal: 12 },
-  unitToggle: { paddingHorizontal: 14, paddingVertical: 10 },
-  unitText: { fontSize: 15, color: '#222' },
+  // 编辑态：白底，只改正文
   editComment: {
-    backgroundColor: '#f4f6f8',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 27,
     color: '#222',
     minHeight: 100,
+    padding: 0,
   },
-  tagInput: { flex: 1, minWidth: 90, paddingVertical: 6, fontSize: 14, color: '#222' },
   editActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

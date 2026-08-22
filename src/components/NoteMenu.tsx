@@ -172,18 +172,19 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
                   </Text>
                 ) : (
                   visibleOthers.map((o) => (
-                    <Pressable key={o.id} style={styles.linkItem} onPress={() => toggleLink(o.id)}>
+                    <Pressable
+                      key={o.id}
+                      style={[styles.linkItem, linkedIds.has(o.id) && styles.linkItemLinked]}
+                      onPress={() => toggleLink(o.id)}>
                       <View style={styles.linkText}>
                         <Text style={styles.linkTitle} numberOfLines={1}>
                           {bookTitles[o.bookId] ?? '未知书名'} · {o.date}
                         </Text>
-                        <Text style={styles.linkComment} numberOfLines={1}>
+                        <Text style={styles.linkComment} numberOfLines={2}>
                           {o.comment}
                         </Text>
                       </View>
-                      <Text style={[styles.linkStatus, linkedIds.has(o.id) && styles.linkLinked]}>
-                        {linkedIds.has(o.id) ? '已关联' : '＋ 关联'}
-                      </Text>
+                      {linkedIds.has(o.id) && <Text style={styles.linkCheck}>✓</Text>}
                     </Pressable>
                   ))
                 )}
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#222',
   },
-  linkList: { maxHeight: 260 },
+  linkList: { maxHeight: 300 },
   linkItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,10 +251,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f5f5f5',
   },
+  linkItemLinked: { backgroundColor: '#f4faf1' },
   linkText: { flex: 1 },
   linkTitle: { fontSize: 14, fontWeight: '500' },
-  linkComment: { fontSize: 12, color: '#999', marginTop: 2 },
-  linkStatus: { fontSize: 13, color: '#208AEF', fontWeight: '600' },
-  linkLinked: { color: '#7CB342' },
+  linkComment: { fontSize: 12, color: '#999', marginTop: 2, lineHeight: 17 },
+  linkCheck: { fontSize: 16, color: '#7CB342', fontWeight: '700' },
   empty: { color: '#999', fontSize: 13, padding: 20, textAlign: 'center' },
 });

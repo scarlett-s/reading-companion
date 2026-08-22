@@ -12,7 +12,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllEntries, getAllBooks, updateEntry } from '@/db';
 import { entryHasAI } from '@/utils';
 import { ReadingEntry } from '@/types';
-import NoteCard, { EditFields } from '@/components/NoteCard';
+import NoteCard from '@/components/NoteCard';
 import NoteMenu from '@/components/NoteMenu';
 
 interface Note {
@@ -50,16 +50,16 @@ export default function HomeScreen() {
     });
   }, []);
 
-  async function saveEdit(id: string, fields: EditFields) {
+  async function saveEdit(id: string, comment: string) {
     const n = notes.find((x) => x.id === id);
     if (!n) return;
     await updateEntry(id, {
       bookId: n.bookId,
       date: n.entry.date,
-      currentPage: fields.currentPage,
-      progressPercent: fields.progressPercent,
-      comment: fields.comment,
-      tags: fields.tags,
+      currentPage: n.entry.currentPage,
+      progressPercent: n.entry.progressPercent,
+      comment,
+      tags: n.entry.tags,
     });
     setEditingId(null);
     load();
@@ -141,7 +141,7 @@ export default function HomeScreen() {
                 }
               }}
               onStartEdit={() => setEditingId(n.id)}
-              onSaveEdit={(fields) => saveEdit(n.id, fields)}
+              onSaveEdit={(comment) => saveEdit(n.id, comment)}
               onCancelEdit={() => setEditingId(null)}
               onLayoutReport={onCardLayout}
             />
