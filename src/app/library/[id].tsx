@@ -14,7 +14,7 @@ import {
 } from '@/db';
 import { synthesizeBook } from '@/ai';
 import { daysWithEntries, readingSpanDays, daysSince } from '@/stats';
-import { todayString, round2 } from '@/utils';
+import { todayString } from '@/utils';
 import { Book, ReadingEntry, Reflection } from '@/types';
 import BookCover from '@/components/BookCover';
 import StarRating from '@/components/StarRating';
@@ -168,30 +168,8 @@ export default function BookDetailScreen() {
           return markdownToPlainText(md);
         }}
       />
-
-      <Text style={styles.sectionTitle}>笔记（{entries.length}）</Text>
-      {entries.length === 0 ? (
-        <Text style={styles.empty}>还没有笔记</Text>
-      ) : (
-        entries.map((e) => (
-          <View key={e.id} style={styles.entry}>
-            <View style={styles.entryHead}>
-              <Text style={styles.entryDate}>{e.date}</Text>
-              <Text style={styles.entryProgress}>{formatProgress(e)}</Text>
-            </View>
-            <Text style={styles.entryComment}>{e.comment}</Text>
-            {!!e.aiSummary && <Text style={styles.entrySummary}>总结：{e.aiSummary}</Text>}
-          </View>
-        ))
-      )}
     </ScrollView>
   );
-}
-
-function formatProgress(e: ReadingEntry): string {
-  if (e.progressPercent != null) return `读至 ${round2(e.progressPercent)}%`;
-  if (e.currentPage != null) return `读至 ${e.currentPage} 页`;
-  return '';
 }
 
 function formatDate(ts: number): string {
@@ -227,11 +205,4 @@ const styles = StyleSheet.create({
   reflectionDate: { fontSize: 12, color: '#999' },
   reflectionContent: { fontSize: 14, lineHeight: 21 },
   sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 8 },
-  empty: { color: '#888', fontSize: 14 },
-  entry: { backgroundColor: '#fff', borderRadius: 10, padding: 12, gap: 6 },
-  entryHead: { flexDirection: 'row', justifyContent: 'space-between' },
-  entryDate: { fontSize: 13, color: '#888' },
-  entryProgress: { fontSize: 13, color: '#555' },
-  entryComment: { fontSize: 14, lineHeight: 20 },
-  entrySummary: { fontSize: 13, color: '#7f8c8d', lineHeight: 19 },
 });

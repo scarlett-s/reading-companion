@@ -51,6 +51,7 @@ export async function initDatabase(): Promise<void> {
       aiKeyPoints TEXT,
       aiSummary TEXT,
       discussion TEXT,
+      tags TEXT,
       createdAt INTEGER NOT NULL
     );
     CREATE TABLE IF NOT EXISTS reflections (
@@ -84,6 +85,7 @@ export async function initDatabase(): Promise<void> {
   const entryCols = await db.getAllAsync<{ name: string }>('PRAGMA table_info(entries);');
   for (const stmt of planColumnMigrations('entries', entryCols.map((c) => c.name), {
     aiSummary: 'TEXT',
+    tags: 'TEXT',
   })) {
     await db.execAsync(stmt);
   }
@@ -177,8 +179,8 @@ export async function addEntry(entry: ReadingEntry): Promise<void> {
   const db = await getDb();
   await db.runAsync(
     `INSERT OR REPLACE INTO entries
-       (id, bookId, date, currentPage, progressPercent, pagesRead, comment, mode, aiKeyPoints, aiSummary, discussion, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+       (id, bookId, date, currentPage, progressPercent, pagesRead, comment, mode, aiKeyPoints, aiSummary, discussion, tags, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     entry.id,
     entry.bookId,
     entry.date,
@@ -190,6 +192,7 @@ export async function addEntry(entry: ReadingEntry): Promise<void> {
     entry.aiKeyPoints ? JSON.stringify(entry.aiKeyPoints) : null,
     entry.aiSummary ?? null,
     entry.discussion ? JSON.stringify(entry.discussion) : null,
+    entry.tags ? JSON.stringify(entry.tags) : null,
     entry.createdAt
   );
 
@@ -311,6 +314,7 @@ interface ReadingEntryRow {
   aiKeyPoints: string | null;
   aiSummary: string | null;
   discussion: string | null;
+  tags: string | null;
   createdAt: number;
 }
 
@@ -331,6 +335,7 @@ function parseEntry(row: ReadingEntryRow): ReadingEntry {
     aiKeyPoints: row.aiKeyPoints ? JSON.parse(row.aiKeyPoints) : undefined,
     aiSummary: row.aiSummary ?? undefined,
     discussion: row.discussion ? JSON.parse(row.discussion) : undefined,
+    tags: row.tags ? JSON.parse(row.tags) : undefined,
     createdAt: row.createdAt,
   };
 }
@@ -351,19 +356,27 @@ export async function getEntry(id: string): Promise<ReadingEntry | null> {
   return row ? parseEntry(row) : null;
 }
 
-/** 编辑笔记：更新书名 / 日期 / 页数 / 百分比 / 正文 */
+/** 编辑笔记：更新书名 / 日期 / 页数 / 百分比 / 正文 / 标签 */
 export async function updateEntry(
   id: string,
-  fields: { bookId: string; date: string; currentPage?: number; progressPercent?: number; comment: string }
+  fields: {
+    bookId: string;
+    date: string;
+    currentPage?: number;
+    progressPercent?: number;
+    comment: string;
+    tags?: string[];
+  }
 ): Promise<void> {
   const db = await getDb();
   await db.runAsync(
-    'UPDATE entries SET bookId = ?, date = ?, currentPage = ?, progressPercent = ?, comment = ? WHERE id = ?;',
+    'UPDATE entries SET bookId = ?, date = ?, currentPage = ?, progressPercent = ?, comment = ?, tags = ? WHERE id = ?;',
     fields.bookId,
     fields.date,
     fields.currentPage ?? null,
     fields.progressPercent ?? null,
     fields.comment,
+    fields.tags ? JSON.stringify(fields.tags) : null,
     id
   );
 }

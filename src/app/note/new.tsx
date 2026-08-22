@@ -35,6 +35,8 @@ export default function NewNoteScreen() {
   const [unitMenuOpen, setUnitMenuOpen] = useState(false);
   const [progressValue, setProgressValue] = useState('');
   const [comment, setComment] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
 
   useFocusEffect(
@@ -62,6 +64,7 @@ export default function NewNoteScreen() {
         setProgressValue(String(e.currentPage));
       }
       setComment(e.comment);
+      setTags(e.tags ?? []);
     })();
   }, [entryId]);
 
@@ -78,8 +81,18 @@ export default function NewNoteScreen() {
     setBookQuery(b.title);
   }
 
-  const hasProgress = progressValue.trim().length > 0;
-  const canSave = selectedBook != null && hasProgress && comment.trim().length > 0;
+  function addTag() {
+    const t = tagInput.trim();
+    if (!t) return;
+    if (!tags.includes(t)) setTags((prev) => [...prev, t]);
+    setTagInput('');
+  }
+
+  function removeTag(t: string) {
+    setTags((prev) => prev.filter((x) => x !== t));
+  }
+
+  const commentFilled = comment.trim().length > 0;
 
   async function submit() {
     if (editing && original && selectedBook) {
@@ -90,6 +103,7 @@ export default function NewNoteScreen() {
         currentPage: unit === 'page' && progressValue.trim() ? Number(progressValue) : undefined,
         progressPercent: unit === 'percent' && progressValue.trim() ? Number(progressValue) : undefined,
         comment: comment.trim(),
+        tags,
       });
       Keyboard.dismiss();
       router.back();
@@ -105,6 +119,7 @@ export default function NewNoteScreen() {
       progressPercent: unit === 'percent' && progressValue.trim() ? Number(progressValue) : undefined,
       comment: comment.trim(),
       mode: 'plain',
+      tags,
       createdAt: Date.now(),
     });
     Keyboard.dismiss();
@@ -121,14 +136,7 @@ export default function NewNoteScreen() {
           <Icon name="list" size={18} />
           <Icon name="hash" size={18} />
           <Icon name="image" size={18} />
-          <View style={{ flex: 1 }} />
         </View>
-        <Pressable
-          style={[styles.accessorySubmit, !canSave && styles.btnDisabled]}
-          disabled={!canSave}
-          onPress={submit}>
-          <Icon name="send" size={18} color="#fff" />
-        </Pressable>
       </View>
     </InputAccessoryView>
   );
@@ -138,6 +146,14 @@ export default function NewNoteScreen() {
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
           <Text style={styles.backIcon}>‹</Text>
+        </Pressable>
+        <View style={{ flex: 1 }} />
+        <Pressable
+          onPress={submit}
+          disabled={!commentFilled || saving}
+          hitSlop={8}
+          style={[styles.checkBtn, (!commentFilled || saving) && styles.checkDisabled]}>
+          <Icon name="check" size={20} color="#fff" />
         </Pressable>
       </View>
 
@@ -220,23 +236,30 @@ export default function NewNoteScreen() {
           textAlignVertical="top"
           inputAccessoryViewID={Platform.OS === 'ios' ? SUBMIT_ID : undefined}
         />
+
+        <View style={styles.tagField}>
+          <Text style={styles.tagLabel}>标签</Text>
+          <View style={styles.tagWrap}>
+            {tags.map((t) => (
+              <Pressable key={t} style={styles.tag} onPress={() => removeTag(t)} hitSlop={4}>
+                <Text style={styles.tagText}>#{t}</Text>
+                <Text style={styles.tagRemove}>×</Text>
+              </Pressable>
+            ))}
+            <TextInput
+              style={styles.tagInput}
+              value={tagInput}
+              onChangeText={setTagInput}
+              onSubmitEditing={addTag}
+              placeholder="添加标签"
+              placeholderTextColor="#888"
+              returnKeyType="done"
+            />
+          </View>
+        </View>
       </ScrollView>
 
       {accessory}
-
-      {Platform.OS !== 'ios' && (
-        <View style={styles.bottomBar} pointerEvents="box-none">
-          <View style={styles.bottomRow}>
-            <View style={{ flex: 1 }} />
-            <Pressable
-              style={[styles.androidSubmit, !canSave && styles.btnDisabled]}
-              disabled={!canSave}
-              onPress={submit}>
-              <Text style={styles.androidSubmitText}>提交</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
     </View>
   );
 }
@@ -252,6 +275,15 @@ const styles = StyleSheet.create({
   },
   backBtn: { paddingHorizontal: 4, paddingVertical: 4 },
   backIcon: { fontSize: 28, color: '#222', lineHeight: 28 },
+  checkBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#7CB342',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkDisabled: { backgroundColor: '#d0d0d0' },
   scroll: { flex: 1 },
   content: { padding: 16, gap: 28, flexGrow: 1, paddingBottom: 48 },
   field: { position: 'relative' },
@@ -326,16 +358,30 @@ const styles = StyleSheet.create({
     color: '#222',
     flex: 1,
   },
-  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center' },
-  androidSubmit: {
-    backgroundColor: '#208AEF',
-    borderRadius: 22,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
+  tagField: { gap: 8 },
+  tagLabel: { fontSize: 13, color: '#888' },
+  tagWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: CARD_RADIUS,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  androidSubmitText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  btnDisabled: { opacity: 0.4 },
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#eef3f8',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  tagText: { fontSize: 13, color: '#4a7c9a' },
+  tagRemove: { fontSize: 15, color: '#999', marginLeft: 2 },
+  tagInput: { flex: 1, minWidth: 100, paddingVertical: 6, fontSize: 14, color: '#222' },
   accessory: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -344,20 +390,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#ddd',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    gap: 18,
   },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    flex: 1,
-  },
-  accessorySubmit: {
-    backgroundColor: '#7CB342',
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

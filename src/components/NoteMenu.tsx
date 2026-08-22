@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,7 +10,6 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { tsToDateTime } from '@/utils';
 import { ReadingEntry } from '@/types';
 import { getAllEntries, getAllBooks, getLinksForEntry, addLink, removeLink, deleteEntry } from '@/db';
@@ -23,6 +23,8 @@ export interface NoteMenuProps {
   cardRight?: number;
   onClose: () => void;
   onChanged?: () => void;
+  /** 点「编辑」→ 直接在卡片内编辑（父页面接管，不再跳页） */
+  onEdit?: () => void;
 }
 
 const PANEL_WIDTH = Math.round(Dimensions.get('window').width * (2 / 3));
@@ -32,12 +34,12 @@ const GAP = 6;
  * 笔记「…」菜单弹窗：靠近图标（默认向左下展开），宽度 ≈ 屏幕 2/3，与卡片右对齐；
  * 若图标靠下空间不足则向左上展开；保证弹窗在屏幕内完整可见。
  */
-export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, onChanged }: NoteMenuProps) {
-  const router = useRouter();
+export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, onChanged, onEdit }: NoteMenuProps) {
   const [view, setView] = useState<'menu' | 'links'>('menu');
   const [others, setOthers] = useState<ReadingEntry[]>([]);
   const [bookTitles, setBookTitles] = useState<Record<string, string>>({});
   const [linkedIds, setLinkedIds] = useState<Set<string>>(new Set());
+  const [linkQuery, setLinkQuery] = useState('');
 
   useEffect(() => {
     if (visible) setView('menu');
@@ -45,6 +47,7 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
 
   async function openLinks() {
     setView('links');
+    setLinkQuery('');
     const [all, books, links] = await Promise.all([
       getAllEntries(),
       getAllBooks(),
@@ -71,7 +74,7 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
 
   function goEdit() {
     onClose();
-    router.push({ pathname: '/note/new', params: { entryId: entry.id } });
+    onEdit?.();
   }
 
   function onDelete() {
@@ -113,6 +116,14 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
   const rightEdge = cardRight ?? (anchor ? anchor.x + anchor.w : win.width - 16);
   const left = rightEdge - PANEL_WIDTH;
 
+  const q = linkQuery.trim().toLowerCase();
+  const visibleOthers = q
+    ? others.filter((o) => {
+        const t = bookTitles[o.bookId] ?? '';
+        return t.toLowerCase().includes(q) || o.comment.toLowerCase().includes(q) || o.date.includes(q);
+      })
+    : others;
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -144,11 +155,23 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
                 <Text style={styles.headerTitle}>关联笔记</Text>
                 <View style={{ width: 40 }} />
               </View>
-              <ScrollView style={styles.linkList}>
-                {others.length === 0 ? (
-                  <Text style={styles.empty}>还没有其他笔记可关联</Text>
+              <View style={styles.searchWrap}>
+                <TextInput
+                  style={styles.searchInput}
+                  value={linkQuery}
+                  onChangeText={setLinkQuery}
+                  placeholder="搜索笔记 / 书名"
+                  placeholderTextColor="#999"
+                  autoCorrect={false}
+                />
+              </View>
+              <ScrollView style={styles.linkList} keyboardShouldPersistTaps="handled">
+                {visibleOthers.length === 0 ? (
+                  <Text style={styles.empty}>
+                    {others.length === 0 ? '还没有其他笔记可关联' : '没有匹配的笔记'}
+                  </Text>
                 ) : (
-                  others.map((o) => (
+                  visibleOthers.map((o) => (
                     <Pressable key={o.id} style={styles.linkItem} onPress={() => toggleLink(o.id)}>
                       <View style={styles.linkText}>
                         <Text style={styles.linkTitle} numberOfLines={1}>
@@ -208,6 +231,15 @@ const styles = StyleSheet.create({
   },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 15, fontWeight: '600', color: '#222' },
   backText: { fontSize: 15, color: '#208AEF' },
+  searchWrap: { paddingHorizontal: 16, paddingBottom: 8 },
+  searchInput: {
+    backgroundColor: '#f4f6f8',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#222',
+  },
   linkList: { maxHeight: 260 },
   linkItem: {
     flexDirection: 'row',

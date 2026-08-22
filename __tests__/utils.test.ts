@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { todayString, normalizeProgress, parseKeyPoints, round2, entryHasAI } from '../src/utils';
+import { todayString, normalizeProgress, parseKeyPoints, round2, entryHasAI, formatProgress } from '../src/utils';
 
 describe('todayString', () => {
   it('返回 YYYY-MM-DD 格式', () => {
@@ -53,6 +53,23 @@ describe('round2', () => {
     expect(round2(-2.678)).toBe(-2.68);
     expect(round2(0)).toBe(0);
     expect(round2(5)).toBe(5);
+  });
+});
+
+describe('formatProgress', () => {
+  const base = { id: '1', bookId: 'b', date: '2026-01-01', comment: 'c', mode: 'plain' as const, createdAt: 0 };
+
+  it('百分比 → 读至 xx%（保留 2 位）', () => {
+    expect(formatProgress({ ...base, progressPercent: 40.567 })).toBe('读至 40.57%');
+  });
+  it('页数 → 读至 xx 页', () => {
+    expect(formatProgress({ ...base, currentPage: 120 })).toBe('读至 120 页');
+  });
+  it('百分比优先于页数', () => {
+    expect(formatProgress({ ...base, progressPercent: 40, currentPage: 120 })).toBe('读至 40%');
+  });
+  it('无进度 → 空串', () => {
+    expect(formatProgress(base)).toBe('');
   });
 });
 

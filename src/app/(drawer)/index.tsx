@@ -9,33 +9,24 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { getAllEntries, getAllBooks } from '@/db';
-import { round2, entryHasAI } from '@/utils';
+import { getAllEntries, getAllBooks, updateEntry } from '@/db';
+import { entryHasAI } from '@/utils';
 import { ReadingEntry } from '@/types';
-import NoteCard from '@/components/NoteCard';
+import NoteCard, { EditFields } from '@/components/NoteCard';
 import NoteMenu from '@/components/NoteMenu';
 
 interface Note {
   id: string;
   bookId: string;
   title: string;
-  date: string;
-  comment: string;
-  progress: string;
-  aiSummary?: string;
   entry: ReadingEntry;
-}
-
-function formatProgress(e: ReadingEntry): string {
-  if (e.progressPercent != null) return `读至 ${round2(e.progressPercent)}%`;
-  if (e.currentPage != null) return `读至 ${e.currentPage} 页`;
-  return '';
 }
 
 export default function HomeScreen() {
   const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [menuEntryId, setMenuEntryId] = useState<string | null>(null);
   const [discussionEntry, setDiscussionEntry] = useState<ReadingEntry | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -53,15 +44,26 @@ export default function HomeScreen() {
           id: e.id,
           bookId: e.bookId,
           title: titles.get(e.bookId) ?? '未知书名',
-          date: e.date,
-          comment: e.comment,
-          progress: formatProgress(e),
-          aiSummary: e.aiSummary,
           entry: e,
         }))
       );
     });
   }, []);
+
+  async function saveEdit(id: string, fields: EditFields) {
+    const n = notes.find((x) => x.id === id);
+    if (!n) return;
+    await updateEntry(id, {
+      bookId: n.bookId,
+      date: n.entry.date,
+      currentPage: fields.currentPage,
+      progressPercent: fields.progressPercent,
+      comment: fields.comment,
+      tags: fields.tags,
+    });
+    setEditingId(null);
+    load();
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -123,13 +125,11 @@ export default function HomeScreen() {
             <NoteCard
               key={n.id}
               cardId={n.id}
+              entry={n.entry}
               title={n.title}
-              date={n.date}
-              comment={n.comment}
-              progress={n.progress}
-              aiSummary={n.aiSummary}
               expanded={!!expanded[n.id]}
               hasAI={entryHasAI(n.entry)}
+              editing={editingId === n.id}
               onToggleExpand={() => toggleExpand(n.id)}
               onPressBook={() => router.push({ pathname: '/library/[id]', params: { id: n.bookId } })}
               onOpenMenu={(anchorRef) => openMenu(n.id, anchorRef)}
@@ -140,6 +140,9 @@ export default function HomeScreen() {
                   router.push({ pathname: '/note/chat/[entryId]', params: { entryId: n.id } });
                 }
               }}
+              onStartEdit={() => setEditingId(n.id)}
+              onSaveEdit={(fields) => saveEdit(n.id, fields)}
+              onCancelEdit={() => setEditingId(null)}
               onLayoutReport={onCardLayout}
             />
           ))
@@ -167,6 +170,7 @@ export default function HomeScreen() {
             setMenuAnchor(null);
           }}
           onChanged={load}
+          onEdit={() => setEditingId(menuEntry.id)}
         />
       )}
 

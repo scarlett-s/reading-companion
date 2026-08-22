@@ -23,6 +23,13 @@ export function entryCharCount(e: ReadingEntry): number {
   return n;
 }
 
+/** 阅读进度文案：「读至 xx 页」/「读至 xx%」；无进度返回空串 */
+export function formatProgress(e: ReadingEntry): string {
+  if (e.progressPercent != null) return `读至 ${round2(e.progressPercent)}%`;
+  if (e.currentPage != null) return `读至 ${e.currentPage} 页`;
+  return '';
+}
+
 /** 时间戳(ms) → 'YYYY-MM-DD HH:MM'（本地时区） */
 export function tsToDateTime(ts: number): string {
   const d = new Date(ts);
