@@ -17,28 +17,62 @@ import { addBook, generateId } from '@/db';
 import { Book, BookSearchResult } from '@/types';
 import BookCover from '@/components/BookCover';
 
-type Source = 'douban' | 'openlibrary';
+const DOUBAN_RETRIES = 2;
+
+/** 豆瓣失败重试；成功则原样返回结果（即使为 0 也直接交给上层判断要不要兜底）。 */
+async function searchDoubanWithRetry(query: string): Promise<BookSearchResult[]> {
+  let lastErr: unknown = null;
+  for (let i = 0; i <= DOUBAN_RETRIES; i++) {
+    try {
+      return await searchDouban(query);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('搜索失败');
+}
 
 export default function AddBookScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<BookSearchResult[]>([]);
+  const [resultsFromDouban, setResultsFromDouban] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [manual, setManual] = useState(false);
-  const [source, setSource] = useState<Source>('douban');
   const [mTitle, setMTitle] = useState('');
   const [mAuthor, setMAuthor] = useState('');
   const [mPages, setMPages] = useState('');
 
   async function onSearch() {
-    if (!query.trim()) return;
+    const q = query.trim();
+    if (!q) return;
     setLoading(true);
     setError('');
+    setResults([]);
+    setResultsFromDouban(false);
     try {
-      const r = source === 'douban' ? await searchDouban(query.trim()) : await searchOpenLibrary(query.trim());
+      // 默认先豆瓣：成功返回（可能 0 条）→ 0 条再走 Open Library 兜底
+      let r: BookSearchResult[] = [];
+      let fromDouban = false;
+      try {
+        r = await searchDoubanWithRetry(q);
+        fromDouban = true;
+      } catch {
+        // 豆瓣失败（含全部重试）→ 静默兜底 Open Library
+        r = [];
+      }
+      if (r.length === 0) {
+        try {
+          r = await searchOpenLibrary(q);
+          if (fromDouban) setError('豆瓣未找到结果，已切换到 Open Library');
+        } catch (e) {
+          setError(e instanceof Error ? e.message : '搜索失败，可手动录入');
+        }
+      }
       setResults(r);
-      if (r.length === 0) setError('没有找到结果，可手动录入');
+      setResultsFromDouban(fromDouban);
+      if (r.length === 0 && !error) setError('没有找到结果，可手动录入');
     } catch (e) {
       setError(e instanceof Error ? e.message : '搜索失败');
     } finally {
@@ -49,7 +83,7 @@ export default function AddBookScreen() {
   async function pick(result: BookSearchResult) {
     // 豆瓣先快速回填搜索结果字段，再后台拉详情补 出版社/译者/页数/出版年
     let r = result;
-    if (source === 'douban') {
+    if (resultsFromDouban) {
       r = await fetchDoubanDetail(result.key, result);
     }
     const book: Book = {
@@ -101,19 +135,6 @@ export default function AddBookScreen() {
         />
         <Pressable style={styles.searchBtn} onPress={onSearch}>
           <Text style={styles.searchText}>搜索</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.sourceRow}>
-        <Pressable
-          style={[styles.sourceBtn, source === 'douban' && styles.sourceActive]}
-          onPress={() => setSource('douban')}>
-          <Text style={[styles.sourceText, source === 'douban' && styles.sourceTextActive]}>豆瓣</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.sourceBtn, source === 'openlibrary' && styles.sourceActive]}
-          onPress={() => setSource('openlibrary')}>
-          <Text style={[styles.sourceText, source === 'openlibrary' && styles.sourceTextActive]}>Open Library</Text>
         </Pressable>
       </View>
 
@@ -184,18 +205,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   searchText: { color: '#fff', fontWeight: '600' },
-  sourceRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  sourceBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#f7f7f7',
-  },
-  sourceActive: { backgroundColor: '#7CB342', borderColor: '#7CB342' },
-  sourceText: { fontSize: 14, color: '#555' },
-  sourceTextActive: { color: '#fff', fontWeight: '600' },
   saveBtn: {
     backgroundColor: '#208AEF',
     borderRadius: 8,

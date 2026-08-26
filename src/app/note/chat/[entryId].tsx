@@ -14,6 +14,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getEntry, getBook, getSettings, updateEntryDiscussion } from '@/db';
 import { generateSocraticQuestion, generateSocraticSummary, isSocraticEnd, detectStopIntent, farewellFor } from '@/ai';
+import { retrieveRelatedNotes } from '@/embedding';
 import { AISettings, DiscussionTurn, ReadingEntry } from '@/types';
 
 const MAX_ROUNDS = 10;
@@ -39,6 +40,7 @@ export default function ChatScreen() {
   const { entryId } = useLocalSearchParams<{ entryId: string }>();
 
   const settingsRef = useRef<AISettings | null>(null);
+  const relatedRef = useRef<{ title: string; comment: string }[]>([]);
   const [entry, setEntry] = useState<ReadingEntry | null>(null);
   const [bookTitle, setBookTitle] = useState('');
   const [turns, setTurns] = useState<DiscussionTurn[]>([]);
@@ -66,7 +68,10 @@ export default function ChatScreen() {
         const book = await getBook(e.bookId);
         const title = book?.title ?? '';
         setBookTitle(title);
-        setQuestion(await generateSocraticQuestion(settings, e.comment, [], title));
+        // 渐进式 RAG：检索相关历史笔记；失败/无结果自动退化（relatedRef 保持空）
+        const related = await retrieveRelatedNotes(e.id).catch(() => []);
+        relatedRef.current = related;
+        setQuestion(await generateSocraticQuestion(settings, e.comment, [], title, related));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'AI 调用失败');
       } finally {
@@ -101,7 +106,7 @@ export default function ChatScreen() {
     setLoading(true);
     setError('');
     try {
-      const q = await generateSocraticQuestion(settingsRef.current!, entry!.comment, next, bookTitle);
+      const q = await generateSocraticQuestion(settingsRef.current!, entry!.comment, next, bookTitle, relatedRef.current);
       if (isSocraticEnd(q)) {
         setLoading(false);
         await finish(next);

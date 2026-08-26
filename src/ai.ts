@@ -30,15 +30,22 @@ async function chat(settings: AISettings, messages: ChatMessage[], maxTokens = 5
 
 // ===== 苏格拉底式提问 =====
 
-/** 构建苏格拉底式提问的提示词：四阶段 + 六类问题，一次一问，AI 判断结束，上限 10 轮 */
+/** 构建苏格拉底式提问的提示词：四阶段 + 六类问题，一次一问，AI 判断结束，上限 10 轮。
+ *  可选注入相关历史笔记（渐进式 RAG）；为空则走普通流程。 */
 export function buildSocraticMessages(
   comment: string,
   history: DiscussionTurn[],
-  bookTitle: string
+  bookTitle: string,
+  relatedNotes?: { title: string; comment: string }[]
 ): ChatMessage[] {
   const historyText = history
     .map((t) => `${t.role === 'assistant' ? '你问' : '我答'}：${t.text}`)
     .join('\n');
+  const relatedText = relatedNotes && relatedNotes.length > 0
+    ? relatedNotes
+        .map((n, i) => `第${i + 1}条（《${n.title}》）：${n.comment}`)
+        .join('\n')
+    : '';
   return [
     {
       role: 'system',
@@ -56,7 +63,11 @@ export function buildSocraticMessages(
 - 一次只问一个问题，问题要简短、开放。
 - 10 轮只是上限、不是目标：一旦用户的想法已充分展开、信息足够，就尽快结束，不必非问满 10 轮。
 - 当用户明确表达想结束（例如「就聊到这」「下次再说」「不聊了」等），立即结束，不要再继续提问。
-- 结束的方式统一：回复以「[[END]]」开头并附一段简短、温暖的总结；否则只回复下一个问题。最多 10 轮提问。`,
+- 结束的方式统一：回复以「[[END]]」开头并附一段简短、温暖的总结；否则只回复下一个问题。最多 10 轮提问。${
+        relatedText
+          ? `\n\n以下是用户过去的一些相关思考（供你参考，可自然联系、追问前后变化，但不要生硬罗列）：\n${relatedText}`
+          : ''
+      }`,
     },
     {
       role: 'user',
@@ -163,9 +174,10 @@ export async function generateSocraticQuestion(
   settings: AISettings,
   comment: string,
   history: DiscussionTurn[],
-  bookTitle: string
+  bookTitle: string,
+  relatedNotes?: { title: string; comment: string }[]
 ): Promise<string> {
-  return chat(settings, buildSocraticMessages(comment, history, bookTitle), 300);
+  return chat(settings, buildSocraticMessages(comment, history, bookTitle, relatedNotes), 300);
 }
 
 /** 对话结束时生成总结 */

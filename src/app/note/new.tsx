@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { getAllBooks, addEntry, updateEntry, getEntry, getBook, generateId } from '@/db';
+import { onEntrySaved } from '@/embedding';
 import { todayString } from '@/utils';
 import { Book, ReadingEntry } from '@/types';
 import { Icon } from '@/components/Icon';
@@ -90,14 +91,16 @@ export default function NewNoteScreen() {
         progressPercent: unit === 'percent' && progressValue.trim() ? Number(progressValue) : undefined,
         comment: comment.trim(),
       });
+      void onEntrySaved(original.id);
       Keyboard.dismiss();
       router.back();
       return;
     }
     if (!selectedBook) return;
     setSaving(true);
+    const id = generateId();
     await addEntry({
-      id: generateId(),
+      id,
       bookId: selectedBook.id,
       date: todayString(),
       currentPage: unit === 'page' && progressValue.trim() ? Number(progressValue) : undefined,
@@ -106,6 +109,7 @@ export default function NewNoteScreen() {
       mode: 'plain',
       createdAt: Date.now(),
     });
+    void onEntrySaved(id);
     Keyboard.dismiss();
     router.back();
   }

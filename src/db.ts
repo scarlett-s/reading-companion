@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { Book, ReadingEntry, Reflection, AISettings, DiscussionTurn, CommentMode, LinkedEntry } from './types';
+import { Book, ReadingEntry, Reflection, AISettings, DiscussionTurn, CommentMode, LinkedEntry, NoteEmbedding } from './types';
 import { planColumnMigrations } from './utils';
 
 type DB = Awaited<ReturnType<typeof SQLite.openDatabaseAsync>>;
@@ -70,6 +70,16 @@ export async function initDatabase(): Promise<void> {
       key TEXT PRIMARY KEY NOT NULL,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS note_embeddings (
+      note_id TEXT PRIMARY KEY NOT NULL,
+      embedding TEXT,
+      model TEXT NOT NULL,
+      dimensions INTEGER NOT NULL DEFAULT 0,
+      content_hash TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
 
   // 迁移：老库可能缺 readCount / rating / aiSummary 列
@@ -127,6 +137,7 @@ export async function addBook(book: Book): Promise<void> {
 
 export async function deleteBook(id: string): Promise<void> {
   const db = await getDb();
+  await db.runAsync('DELETE FROM note_embeddings WHERE note_id IN (SELECT id FROM entries WHERE bookId = ?);', id);
   await db.runAsync('DELETE FROM entries WHERE bookId = ?;', id);
   await db.runAsync('DELETE FROM reflections WHERE bookId = ?;', id);
   await db.runAsync('DELETE FROM books WHERE id = ?;', id);
@@ -289,12 +300,152 @@ export async function getSettings(): Promise<AISettings> {
     baseUrl: settings.baseUrl ?? '',
     apiKey: settings.apiKey ?? '',
     model: settings.model ?? '',
+    embeddingModel: settings.embeddingModel ?? '',
   };
 }
 
 export async function saveSetting(key: string, value: string): Promise<void> {
   const db = await getDb();
   await db.runAsync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?);', key, value);
+}
+
+// ===== Embedding =====
+
+interface NoteEmbeddingRow {
+  note_id: string;
+  embedding: string | null;
+  model: string;
+  dimensions: number;
+  content_hash: string | null;
+  status: string;
+  created_at: number;
+  updated_at: number;
+}
+
+function parseEmbedding(row: NoteEmbeddingRow): NoteEmbedding {
+  return {
+    noteId: row.note_id,
+    embedding: row.embedding ? JSON.parse(row.embedding) : null,
+    model: row.model,
+    dimensions: row.dimensions,
+    contentHash: row.content_hash ?? '',
+    status: row.status as NoteEmbedding['status'],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** 写入/更新一条 ready embedding（含 content_hash / model / dimensions） */
+export async function upsertEmbedding(
+  noteId: string,
+  embedding: number[],
+  model: string,
+  contentHash: string
+): Promise<void> {
+  const db = await getDb();
+  const now = Date.now();
+  await db.runAsync(
+    `INSERT OR REPLACE INTO note_embeddings
+       (note_id, embedding, model, dimensions, content_hash, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'ready', ?, ?);`,
+    noteId,
+    JSON.stringify(embedding),
+    model,
+    embedding.length,
+    contentHash,
+    now,
+    now
+  );
+}
+
+/** 标记 pending（重新生成前） */
+export async function markEmbeddingPending(noteId: string, model: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    `INSERT OR REPLACE INTO note_embeddings
+       (note_id, embedding, model, dimensions, content_hash, status, created_at, updated_at)
+     VALUES (?, NULL, ?, 0, NULL, 'pending', ?, ?);`,
+    noteId,
+    model,
+    Date.now(),
+    Date.now()
+  );
+}
+
+/** 标记 failed（生成失败，供 backfill 重试） */
+export async function markEmbeddingFailed(noteId: string, model: string): Promise<void> {
+  const db = await getDb();
+  const now = Date.now();
+  await db.runAsync(
+    `INSERT INTO note_embeddings (note_id, embedding, model, dimensions, content_hash, status, created_at, updated_at)
+     VALUES (?, NULL, ?, 0, NULL, 'failed', ?, ?)
+     ON CONFLICT(note_id) DO UPDATE SET status='failed', updated_at=excluded.updated_at;`,
+    noteId,
+    model,
+    now,
+    now
+  );
+}
+
+/** 取单条 embedding（可能不存在） */
+export async function getEmbedding(noteId: string): Promise<NoteEmbedding | null> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<NoteEmbeddingRow>('SELECT * FROM note_embeddings WHERE note_id = ?;', noteId);
+  return row ? parseEmbedding(row) : null;
+}
+
+/** 取全部 ready embedding（retrieval / backfill 用） */
+export async function getAllReadyEmbeddings(): Promise<NoteEmbedding[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<NoteEmbeddingRow>("SELECT * FROM note_embeddings WHERE status = 'ready';");
+  return rows.map(parseEmbedding);
+}
+
+/** 删除某条笔记的 embedding（笔记删除时同步调用） */
+export async function deleteEmbedding(noteId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM note_embeddings WHERE note_id = ?;', noteId);
+}
+
+/** embedding 各状态计数（诊断用） */
+export async function getEmbeddingStats(): Promise<{
+  total: number;
+  ready: number;
+  pending: number;
+  failed: number;
+  missing: number;
+}> {
+  const db = await getDb();
+  const [total, ready, pending, failed, entries] = await Promise.all([
+    db.getFirstAsync<{ c: number }>('SELECT COUNT(*) c FROM note_embeddings;'),
+    db.getFirstAsync<{ c: number }>("SELECT COUNT(*) c FROM note_embeddings WHERE status = 'ready';"),
+    db.getFirstAsync<{ c: number }>("SELECT COUNT(*) c FROM note_embeddings WHERE status = 'pending';"),
+    db.getFirstAsync<{ c: number }>("SELECT COUNT(*) c FROM note_embeddings WHERE status = 'failed';"),
+    db.getFirstAsync<{ c: number }>('SELECT COUNT(*) c FROM entries;'),
+  ]);
+  const readyCount = ready?.c ?? 0;
+  return {
+    total: total?.c ?? 0,
+    ready: readyCount,
+    pending: pending?.c ?? 0,
+    failed: failed?.c ?? 0,
+    missing: (entries?.c ?? 0) - readyCount,
+  };
+}
+
+/** 找「还没有 ready embedding」的笔记 id（backfill 用），按最旧优先，限量 */
+export async function getEntriesMissingEmbedding(limit: number): Promise<string[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ id: string }>(
+    `SELECT e.id
+     FROM entries e
+     LEFT JOIN note_embeddings ne ON ne.note_id = e.id AND ne.status = 'ready'
+     WHERE ne.note_id IS NULL
+     ORDER BY e.createdAt ASC
+     LIMIT ?;`,
+    limit
+  );
+  return rows.map((r) => r.id);
 }
 
 // ===== 内部 =====
@@ -378,6 +529,7 @@ export async function updateEntry(
 export async function deleteEntry(id: string): Promise<void> {
   const db = await getDb();
   await db.runAsync('DELETE FROM links WHERE fromEntryId = ? OR toEntryId = ?;', id, id);
+  await db.runAsync('DELETE FROM note_embeddings WHERE note_id = ?;', id);
   await db.runAsync('DELETE FROM entries WHERE id = ?;', id);
 }
 

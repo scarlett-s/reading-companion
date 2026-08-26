@@ -70,4 +70,35 @@ export interface AISettings {
   baseUrl: string; // 如 https://api.deepseek.com 或 http://localhost:11434
   apiKey: string; // Ollama 可为空
   model: string; // 如 deepseek-chat / llama3
+  embeddingModel: string; // 如 nomic-embed-text / text-embedding-3-small；为空则按 baseUrl 推断
+}
+
+// ===== Embedding / RAG =====
+
+export type EmbeddingStatus = 'pending' | 'ready' | 'failed';
+
+/** 一条笔记的 embedding 记录（独立于 entries，可回溯、可重新生成） */
+export interface NoteEmbedding {
+  noteId: string;
+  embedding: number[] | null; // ready 前为 null
+  model: string;
+  dimensions: number;
+  contentHash: string;
+  status: EmbeddingStatus;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** embedding 服务商抽象：后续可换云端其它家 / 自部署 / 本地 on-device */
+export interface EmbeddingProvider {
+  embed(text: string): Promise<number[]>;
+  modelInfo(): { model: string; dimensions: number };
+}
+
+/** 检索命中的一条历史笔记（含证据，供未来「为什么关联」解释） */
+export interface RetrievedNote {
+  noteId: string;
+  score: number;
+  title: string;
+  comment: string;
 }

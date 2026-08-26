@@ -229,9 +229,15 @@ const styles = StyleSheet.create({
   progress: { fontSize: 13, color: '#208AEF' },
   comment: { fontSize: 15, lineHeight: 27, color: '#222' },
   tagInline: {
-    color: '#4a7c9a',
-    backgroundColor: '#eef3f8',
-    borderRadius: 6,
+    color: '#3a6e8e',
+    backgroundColor: '#e6eff6',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    // 注意：paddingVertical 在 RN 内联 Text 上会让该行增高且仅作用于背景视觉，不会把相邻行撑开
+    paddingTop: 2,
+    paddingBottom: 2,
+    marginHorizontal: 1,
+    overflow: 'hidden',
   },
   summary: { backgroundColor: '#f4f6f8', borderRadius: 10, padding: 12, gap: 4 },
   summaryLabel: { fontSize: 12, color: '#888' },

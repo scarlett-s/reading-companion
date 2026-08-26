@@ -107,7 +107,7 @@ export default function LibraryScreen() {
               </>
             )}
 
-            <Text style={styles.sectionTitle}>我的书库</Text>
+            <Text style={[styles.sectionTitle, recent.length > 0 && styles.sectionTitleSpaced]}>我的书库</Text>
             <View style={styles.grid}>
               <Pressable style={styles.gridItem} onPress={() => router.push('/library/add')}>
                 <View style={styles.addCard}>
@@ -175,14 +175,15 @@ const styles = StyleSheet.create({
   dropdownSub: { fontSize: 12, color: '#888', marginTop: 2 },
   dropdownEmpty: { color: '#999', fontSize: 13, padding: 16, textAlign: 'center' },
   sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12, marginTop: 8 },
+  sectionTitleSpaced: { marginTop: 32 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 16 },
   gridItem: { width: '33.33%', alignItems: 'center', gap: 6 },
   gridTitle: { fontSize: 13, color: '#333' },
   gridPublisher: { fontSize: 11, color: '#999' },
   addCard: {
     width: 88,
-    height: 88,
-    borderRadius: 8,
+    height: 123,
+    borderRadius: 4,
     backgroundColor: '#eee',
     alignItems: 'center',
     justifyContent: 'center',

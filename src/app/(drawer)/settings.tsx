@@ -9,16 +9,18 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { getSettings, saveSetting, getAllBooks, getAllEntries } from '@/db';
 import { allBooksToMarkdown, markdownToPlainText, markdownToHtml } from '@/export';
 import { AISettings, Book, ReadingEntry } from '@/types';
 import ExportButtons from '@/components/ExportButtons';
 
-const DEEPSEEK: AISettings = { baseUrl: 'https://api.deepseek.com', apiKey: '', model: 'deepseek-chat' };
-const OLLAMA: AISettings = { baseUrl: 'http://localhost:11434/v1', apiKey: '', model: 'llama3' };
+const DEEPSEEK: AISettings = { baseUrl: 'https://api.deepseek.com', apiKey: '', model: 'deepseek-chat', embeddingModel: '' };
+const OLLAMA: AISettings = { baseUrl: 'http://localhost:11434/v1', apiKey: '', model: 'llama3', embeddingModel: 'nomic-embed-text' };
 
 export default function SettingsScreen() {
-  const [settings, setSettings] = useState<AISettings>({ baseUrl: '', apiKey: '', model: '' });
+  const router = useRouter();
+  const [settings, setSettings] = useState<AISettings>({ baseUrl: '', apiKey: '', model: '', embeddingModel: '' });
   const [saved, setSaved] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [entriesByBook, setEntriesByBook] = useState<Record<string, ReadingEntry[]>>({});
@@ -45,6 +47,7 @@ export default function SettingsScreen() {
     await saveSetting('baseUrl', settings.baseUrl.trim());
     await saveSetting('apiKey', settings.apiKey.trim());
     await saveSetting('model', settings.model.trim());
+    await saveSetting('embeddingModel', settings.embeddingModel.trim());
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -85,6 +88,15 @@ export default function SettingsScreen() {
         onChange={(v) => set('model', v)}
         placeholder="deepseek-chat"
       />
+      <Field
+        label="Embedding 模型"
+        value={settings.embeddingModel}
+        onChange={(v) => set('embeddingModel', v)}
+        placeholder="nomic-embed-text / text-embedding-3-small（留空自动判断）"
+      />
+      <Text style={styles.hint}>
+        Embedding 用于「跟 AI 聊聊」时检索相关历史笔记。Ollama 可用 nomic-embed-text（离线免费）；OpenAI 用 text-embedding-3-small；DeepSeek 暂无 embedding 接口，留空即可（自动跳过）。
+      </Text>
 
       <Pressable style={styles.saveBtn} onPress={save}>
         <Text style={styles.saveText}>{saved ? '已保存 ✓' : '保存'}</Text>
@@ -100,6 +112,15 @@ export default function SettingsScreen() {
           return markdownToPlainText(md);
         }}
       />
+
+      {__DEV__ && (
+        <>
+          <Text style={styles.sectionTitle}>开发者</Text>
+          <Pressable style={styles.diagBtn} onPress={() => router.push('/diagnostics')}>
+            <Text style={styles.diagText}>🔬 诊断 / 测试（Embedding & RAG）</Text>
+          </Pressable>
+        </>
+      )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -174,4 +195,11 @@ const styles = StyleSheet.create({
   },
   saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 8 },
+  diagBtn: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 8,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  diagText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 });

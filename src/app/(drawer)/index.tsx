@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllEntries, getAllBooks, updateEntry } from '@/db';
+import { onEntrySaved } from '@/embedding';
 import { entryHasAI } from '@/utils';
 import { ReadingEntry } from '@/types';
 import NoteCard from '@/components/NoteCard';
@@ -63,6 +64,7 @@ export default function HomeScreen() {
       progressPercent: n.entry.progressPercent,
       comment,
     });
+    void onEntrySaved(id);
     Keyboard.dismiss();
     setEditingId(null);
     setExpanded((prev) => ({ ...prev, [id]: true }));
