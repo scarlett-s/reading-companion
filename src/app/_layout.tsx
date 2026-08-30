@@ -16,7 +16,8 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <Stack>
         <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-        <Stack.Screen name="library/[id]" options={{ title: '图书详情' }} />
+        <Stack.Screen name="library/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="library/[id]/export" options={{ title: '导出笔记' }} />
         <Stack.Screen name="library/add" options={{ title: '添加图书' }} />
         <Stack.Screen name="note/new" options={{ title: '', presentation: 'card', headerShown: false }} />
         <Stack.Screen name="note/chat/[entryId]" options={{ title: '对话' }} />

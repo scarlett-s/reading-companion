@@ -6,8 +6,10 @@ function formatProgress(e: ReadingEntry): string {
   return '';
 }
 
-/** 一本书的笔记 → Markdown */
-export function bookToMarkdown(book: Book, entries: ReadingEntry[]): string {
+/** 一本书的笔记 → Markdown
+ *  includeAi=false 时不写对话/总结，只保留正文与进度。 */
+export function bookToMarkdown(book: Book, entries: ReadingEntry[], opts: { includeAi?: boolean } = {}): string {
+  const includeAi = opts.includeAi !== false;
   const lines: string[] = [];
   lines.push(`# 《${book.title}》`);
   lines.push('');
@@ -21,16 +23,18 @@ export function bookToMarkdown(book: Book, entries: ReadingEntry[]): string {
     lines.push(`### ${e.date}${prog ? `（${prog}）` : ''}`);
     lines.push('');
     lines.push(e.comment);
-    if (e.discussion && e.discussion.length > 0) {
-      lines.push('');
-      lines.push('对话：');
-      for (const t of e.discussion) {
-        lines.push(`- ${t.role === 'assistant' ? '问' : '答'}：${t.text}`);
+    if (includeAi) {
+      if (e.discussion && e.discussion.length > 0) {
+        lines.push('');
+        lines.push('对话：');
+        for (const t of e.discussion) {
+          lines.push(`- ${t.role === 'assistant' ? '问' : '答'}：${t.text}`);
+        }
       }
-    }
-    if (e.aiSummary) {
-      lines.push('');
-      lines.push(`总结：${e.aiSummary}`);
+      if (e.aiSummary) {
+        lines.push('');
+        lines.push(`总结：${e.aiSummary}`);
+      }
     }
     lines.push('');
   }

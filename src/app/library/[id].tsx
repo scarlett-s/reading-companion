@@ -1,35 +1,66 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { View, Text, Pressable, ScrollView, StyleSheet, Modal, Alert } from 'react-native';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   getBook,
   getEntriesByBook,
   getReflections,
   countEntriesByBook,
   addReflection,
-  markFinished,
   setBookRating,
+  deleteBook,
   generateId,
   getSettings,
 } from '@/db';
 import { synthesizeBook } from '@/ai';
-import { daysWithEntries, readingSpanDays, daysSince } from '@/stats';
+import { daysWithEntries, daysSince, entryProgress } from '@/stats';
 import { todayString } from '@/utils';
 import { Book, ReadingEntry, Reflection } from '@/types';
 import BookCover from '@/components/BookCover';
 import StarRating from '@/components/StarRating';
-import HeatMap from '@/components/HeatMap';
-import ExportButtons from '@/components/ExportButtons';
-import { bookToMarkdown, markdownToPlainText, markdownToHtml } from '@/export';
+import BookStats from '@/components/BookStats';
+import InsightTabs from '@/components/InsightTabs';
+import ReadingTimeline from '@/components/ReadingTimeline';
+import AIInsightCard from '@/components/AIInsightCard';
+
+type Tab = 'notes' | 'reflections';
+
+const COVER_W = 106;
+const COVER_H = 148;
+const COVER_INFO_GAP = 20;
+const HERO_H_PAD = 12;
+const HERO_TO_STATS_GAP = 40;
+const STATS_TO_NOTES_GAP = 40;
+
+/** 用斜杠拼接非空字段：author / publisher / translator / publishYear出版 / pageCount页 */
+function buildMetadata(book: Book): string {
+  const parts: string[] = [];
+  if (book.author) parts.push(book.author);
+  if (book.publisher) parts.push(book.publisher);
+  if (book.translator) parts.push(book.translator);
+  if (book.publishYear) parts.push(`${book.publishYear}出版`);
+  if (book.pageCount) parts.push(`${book.pageCount}页`);
+  return parts.join(' / ');
+}
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [book, setBook] = useState<Book | null>(null);
   const [entries, setEntries] = useState<ReadingEntry[]>([]);
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [noteCount, setNoteCount] = useState(0);
+  const [tab, setTab] = useState<Tab>('notes');
   const [organizing, setOrganizing] = useState(false);
   const [organizeError, setOrganizeError] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const reflectionsSorted = useMemo(
+    () => [...reflections].sort((a, b) => b.createdAt - a.createdAt),
+    [reflections]
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -45,12 +76,6 @@ export default function BookDetailScreen() {
     }, [id])
   );
 
-  const heatData = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const e of entries) map[e.date] = (map[e.date] ?? 0) + 1;
-    return map;
-  }, [entries]);
-
   if (!book) {
     return (
       <View style={styles.center}>
@@ -59,21 +84,46 @@ export default function BookDetailScreen() {
     );
   }
 
-  const lastDate = entries.length > 0 ? entries[entries.length - 1].date : null;
-  const lastOpen = lastDate ? daysSince(lastDate, todayString()) : null;
+  const lastEntry = entries.length > 0 ? entries[entries.length - 1] : null;
+  const lastDate = lastEntry ? lastEntry.date : null;
+  const lastOpenDays = lastDate ? daysSince(lastDate, todayString()) : null;
   const readDays = daysWithEntries(entries);
-  const spanDays = readingSpanDays(entries);
   const readTimes = book.readCount ?? 0;
   const currentRound = book.status === 'reading' ? readTimes + 1 : readTimes;
+  const progressPct = lastEntry ? entryProgress(lastEntry, book.pageCount) : null;
 
-  async function finishBook() {
-    await markFinished(book!.id);
-    setBook(await getBook(book!.id));
-  }
+  const statusLabel = book.status === 'finished' ? `已读 ${readTimes} 遍` : `在读 · 第 ${currentRound} 遍`;
+  const canInsight = !organizing && noteCount > 5;
+  const metadata = buildMetadata(book);
+  const subtitle = (book as Book & { subtitle?: string }).subtitle;
 
   async function rate(v: number) {
     await setBookRating(book!.id, v);
     setBook(await getBook(book!.id));
+  }
+
+  function goExport() {
+    setMenuOpen(false);
+    router.push({ pathname: '/library/[id]/export', params: { id: book!.id } });
+  }
+
+  function onDelete() {
+    setMenuOpen(false);
+    Alert.alert(
+      '删除本书',
+      '删除书籍将同时删除书籍笔记',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确认',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteBook(book!.id);
+            router.replace('/library');
+          },
+        },
+      ]
+    );
   }
 
   async function generateInsight() {
@@ -88,6 +138,7 @@ export default function BookDetailScreen() {
       );
       await addReflection({ id: generateId(), bookId: book!.id, content, createdAt: Date.now() });
       setReflections(await getReflections(book!.id));
+      setTab('reflections');
     } catch (e) {
       setOrganizeError(e instanceof Error ? e.message : '生成失败');
     } finally {
@@ -96,113 +147,213 @@ export default function BookDetailScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.coverCard}>
-        <BookCover url={book.coverUrl} size={140} />
-        <Text style={styles.title}>{book.title}</Text>
-        <Text style={styles.author}>{book.author}</Text>
-      </View>
-
-      <View style={styles.ratingRow}>
-        <StarRating value={book.rating ?? 0} onChange={rate} />
-      </View>
-
-      <View style={styles.roundRow}>
-        <Text style={styles.roundText}>
-          {book.status === 'finished' ? `已读完 ${readTimes} 遍` : `正在读第 ${currentRound} 遍`}
-        </Text>
-        {book.status !== 'finished' && (
-          <Pressable style={styles.finishBtn} onPress={finishBook}>
-            <Text style={styles.finishText}>标记读完</Text>
+    <View style={styles.root}>
+      {/* 顶部 Hero — 白色背景 */}
+      <View style={[styles.hero, { paddingTop: insets.top }]}>
+        {/* 导航栏：back | 占位 | ♡ | ⋯ */}
+        <View style={styles.navBar}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.navBtn}>
+            <Text style={styles.navIcon}>‹</Text>
           </Pressable>
-        )}
+          <View style={styles.navSpacer} />
+          <View style={styles.navRight}>
+            <Pressable onPress={() => {}} hitSlop={8} style={styles.navBtn}>
+              <Text style={styles.navIcon}>♡</Text>
+            </Pressable>
+            <Pressable onPress={() => setMenuOpen(true)} hitSlop={8} style={styles.navBtn}>
+              <Text style={styles.navIcon}>⋯</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* 屏幕标题 — 绝对居中于整个页面宽度 */}
+        <View style={[styles.navTitleLayer, { top: insets.top }]} pointerEvents="none">
+          <Text style={styles.navTitle} numberOfLines={1}>图书详情</Text>
+        </View>
+
+        {/* Book overview section */}
+        <View style={styles.bookOverview}>
+          {/* 顶部行：cover | info stack */}
+          <View style={styles.topRow}>
+            <View style={styles.coverWrap}>
+              <BookCover url={book.coverUrl} size={COVER_W} />
+            </View>
+
+            <View style={styles.infoCol}>
+              <Text style={styles.title} numberOfLines={3}>{book.title}</Text>
+              {!!subtitle && <Text style={styles.subtitle} numberOfLines={2}>{subtitle}</Text>}
+              {!!metadata && <Text style={styles.metadata} numberOfLines={3}>{metadata}</Text>}
+              <View style={styles.statusPill}>
+                <Text style={styles.statusPillText}>{statusLabel}</Text>
+              </View>
+              <StarRating value={book.rating ?? 0} onChange={rate} size={16} activeColor="#F5B400" inactiveColor="#D8D5CF" />
+            </View>
+          </View>
+
+          {/* 三个统计 — cover 正下方 */}
+          <View style={styles.statsRow}>
+            <BookStats lastOpenDays={lastOpenDays} readDays={readDays} progressPct={progressPct} />
+          </View>
+        </View>
       </View>
 
-      <View style={styles.heatCard}>
-        <Text style={styles.cardLabel}>阅读热力图</Text>
-        <HeatMap data={heatData} weeks={26} endDate={todayString()} />
-      </View>
+      {/* 内容区 */}
+      <View style={styles.contentWrap}>
+        <InsightTabs
+          activeTab={tab}
+          onTabChange={setTab}
+          noteCount={entries.length}
+          reflectionCount={reflections.length}
+          onNewInsight={generateInsight}
+          insightDisabled={!canInsight}
+          loading={organizing}
+        />
 
-      <View style={styles.infoRow}>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoValue}>{lastOpen != null ? `${lastOpen} 天` : '—'}</Text>
-          <Text style={styles.infoLabel}>距上次读</Text>
-        </View>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoValue}>{readDays} 天</Text>
-          <Text style={styles.infoLabel}>已读</Text>
-        </View>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoValue}>{spanDays} 天</Text>
-          <Text style={styles.infoLabel}>阅读周期</Text>
-        </View>
-      </View>
-
-      <View style={styles.insightSection}>
-        <Pressable
-          style={[styles.insightBtn, (organizing || noteCount <= 5) && styles.disabled]}
-          disabled={organizing || noteCount <= 5}
-          onPress={generateInsight}>
-          {organizing ? <ActivityIndicator color="#fff" /> : <Text style={styles.insightText}>✨ 生成洞察报告</Text>}
-        </Pressable>
-        {noteCount <= 5 && (
-          <Text style={styles.hint}>笔记超过 5 条后可生成洞察报告（当前 {noteCount} 条）</Text>
-        )}
         {!!organizeError && <Text style={styles.error}>{organizeError}</Text>}
+
+        <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
+          {tab === 'notes' ? (
+            entries.length === 0 ? (
+              <Text style={styles.empty}>还没有笔记</Text>
+            ) : (
+              <ReadingTimeline
+                entries={entries}
+                onEntryPress={(entryId) => router.push({ pathname: '/note/chat/[entryId]', params: { entryId } })}
+              />
+            )
+          ) : reflectionsSorted.length === 0 ? (
+            <Text style={styles.empty}>还没有 AI 洞察</Text>
+          ) : (
+            <View>
+              {reflectionsSorted.map((r) => (
+                <AIInsightCard key={r.id} reflection={r} />
+              ))}
+            </View>
+          )}
+        </ScrollView>
       </View>
 
-      {reflections.map((r) => (
-        <View key={r.id} style={styles.reflection}>
-          <Text style={styles.reflectionDate}>{formatDate(r.createdAt)}</Text>
-          <Text style={styles.reflectionContent}>{r.content}</Text>
-        </View>
-      ))}
-
-      <Text style={styles.sectionTitle}>导出笔记</Text>
-      <ExportButtons
-        filename={book.title}
-        getContent={(format) => {
-          const md = bookToMarkdown(book, entries);
-          if (format === 'md') return md;
-          if (format === 'html') return markdownToHtml(md);
-          return markdownToPlainText(md);
-        }}
-      />
-    </ScrollView>
+      {/* 「…」菜单 */}
+      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+        <Pressable style={styles.menuBackdrop} onPress={() => setMenuOpen(false)}>
+          <Pressable style={styles.menuPanel} onPress={() => {}}>
+            <Pressable style={styles.menuItem} onPress={goExport}>
+              <Text style={styles.menuItemText}>导出笔记</Text>
+            </Pressable>
+            <View style={styles.menuDivider} />
+            <Pressable style={styles.menuItem} onPress={onDelete}>
+              <Text style={[styles.menuItemText, styles.menuItemDanger]}>删除本书</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
   );
 }
 
-function formatDate(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f0f0' },
-  content: { padding: 16, gap: 14 },
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  coverCard: { backgroundColor: '#fff', borderRadius: 12, padding: 20, alignItems: 'center', gap: 10 },
-  title: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
-  author: { fontSize: 14, color: '#666' },
-  ratingRow: { alignItems: 'center' },
-  roundRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  roundText: { fontSize: 14, color: '#555' },
-  finishBtn: { backgroundColor: '#208AEF', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
-  finishText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  heatCard: { backgroundColor: '#eaf6e6', borderRadius: 12, padding: 14, gap: 10 },
-  cardLabel: { fontSize: 13, color: '#4a7c2a', fontWeight: '600' },
-  infoRow: { flexDirection: 'row', gap: 10 },
-  infoCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14, alignItems: 'center', gap: 4 },
-  infoValue: { fontSize: 18, fontWeight: '700' },
-  infoLabel: { fontSize: 12, color: '#888' },
-  insightSection: { gap: 8 },
-  insightBtn: { backgroundColor: '#8e44ad', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
-  insightText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  disabled: { opacity: 0.4 },
-  hint: { fontSize: 12, color: '#999' },
-  error: { fontSize: 13, color: '#c0392b' },
-  reflection: { backgroundColor: '#faf7fb', borderRadius: 10, padding: 14, gap: 8 },
-  reflectionDate: { fontSize: 12, color: '#999' },
-  reflectionContent: { fontSize: 14, lineHeight: 21 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 8 },
+
+  // Hero
+  hero: { backgroundColor: '#FFFFFF' },
+
+  // Nav bar: back | 占位 | fav | more
+  navBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    paddingHorizontal: HERO_H_PAD,
+  },
+  navBtn: { padding: 4 },
+  navIcon: { color: '#1a1a1a', fontSize: 26, fontWeight: '400', lineHeight: 28 },
+  navSpacer: { flex: 1 },
+  navRight: { flexDirection: 'row', gap: 14 },
+  // 屏幕标题 — 绝对居中于整个页面宽度
+  navTitleLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navTitle: {
+    color: '#1a1a1a',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Book overview
+  bookOverview: {
+    paddingHorizontal: HERO_H_PAD,
+    paddingTop: 16,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: COVER_INFO_GAP,
+  },
+  coverWrap: {
+    width: COVER_W,
+    height: COVER_H,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  infoCol: {
+    flex: 1,
+    height: COVER_H,
+    justifyContent: 'space-between',
+  },
+  title: { color: '#1a1a1a', fontSize: 22, fontWeight: '700', lineHeight: 28 },
+  subtitle: { color: '#5a5a5a', fontSize: 14, lineHeight: 19 },
+  metadata: { color: '#9C9C9C', fontSize: 12, lineHeight: 17 },
+  statusPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  statusPillText: { color: '#1a1a1a', fontSize: 12 },
+
+  // 三个统计 — cover 正下方，gap = HERO_TO_STATS_GAP
+  statsRow: {
+    marginTop: HERO_TO_STATS_GAP,
+  },
+
+  // Content area — 上方与 stats 留 STATS_TO_NOTES_GAP
+  contentWrap: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: STATS_TO_NOTES_GAP,
+  },
+  listScroll: { flex: 1 },
+  listContent: { paddingTop: 8, paddingBottom: 32 },
+
+  error: { paddingHorizontal: 12, color: '#c0392b', fontSize: 13, marginTop: 4 },
+  empty: { color: '#999', fontSize: 14, padding: 20, textAlign: 'center' },
+
+  // Menu
+  menuBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' },
+  menuPanel: {
+    width: 240,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  menuItem: { paddingVertical: 14, paddingHorizontal: 20 },
+  menuItemText: { fontSize: 16, color: '#222', textAlign: 'center' },
+  menuItemDanger: { color: '#e74c3c' },
+  menuDivider: { height: 1, backgroundColor: '#f0f0f0', marginHorizontal: 10 },
 });

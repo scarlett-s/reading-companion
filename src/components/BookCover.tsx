@@ -23,7 +23,7 @@ export default function BookCover({ url, size = 56 }: { url?: string; size?: num
 }
 
 const styles = StyleSheet.create({
-  box: { borderRadius: 4, overflow: 'hidden', backgroundColor: '#e8e8e8' },
+  box: { borderRadius: 12, overflow: 'hidden', backgroundColor: '#e8e8e8' },
   img: { width: '100%', height: '100%' },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
