@@ -1,20 +1,46 @@
-import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, PanResponder, Dimensions } from 'react-native';
 import { Slot } from 'expo-router';
 import Drawer, { DrawerItem } from '@/components/Drawer';
 
+const PANEL_WIDTH = Math.round(Dimensions.get('window').width * 0.8);
+
 const MENU: DrawerItem[] = [
-  { label: '首页', path: '/' },
-  { label: '书库', path: '/library' },
-  { label: '统计', path: '/stats' },
-  { label: '日历', path: '/calendar' },
-  { label: '设置', path: '/settings' },
+  { label: '首页', path: '/', icon: 'home' },
+  { label: '书库', path: '/library', icon: 'library' },
+  { label: '统计', path: '/stats', icon: 'stats' },
+  { label: '日历', path: '/calendar', icon: 'calendar' },
+  { label: '设置', path: '/settings', icon: 'settings' },
 ];
 
 export default function DrawerLayout() {
   const [open, setOpen] = useState(false);
+
+  // 全局 PanResponder：左边缘向右滑 → 打开侧边栏
+  // 用 onMoveShouldSetPanResponderCapture 让父级在子级之前声明响应
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
+        if (open) return false;
+        const isLeftEdge = evt.nativeEvent.pageX < 30;
+        const isRightSwipe = gestureState.dx > 8;
+        const isHorizontal = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.2;
+        return isLeftEdge && isRightSwipe && isHorizontal;
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (
+          gestureState.dx > PANEL_WIDTH * 0.3 ||
+          gestureState.vx > 0.5
+        ) {
+          setOpen(true);
+        }
+      },
+    })
+  ).current;
+
   return (
-    <View style={styles.root}>
+    <View style={styles.root} {...panResponder.panHandlers}>
       <View style={styles.header}>
         <Pressable onPress={() => setOpen(true)} style={styles.menuBtn} hitSlop={8}>
           <Text style={styles.menuIcon}>☰</Text>
