@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, PanResponder, Dimensions } from 'react-native';
-import { Slot } from 'expo-router';
+import { Slot, usePathname } from 'expo-router';
 import Drawer, { DrawerItem } from '@/components/Drawer';
+import { registerOpenDrawer } from '@/drawerControl';
 
 const PANEL_WIDTH = Math.round(Dimensions.get('window').width * 0.8);
 
@@ -15,6 +16,15 @@ const MENU: DrawerItem[] = [
 
 export default function DrawerLayout() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  // 日历页自带 nav bar，drawer header 让位
+  const showHeader = pathname !== '/calendar';
+
+  // 把 setOpen 暴露给子页面（日历页左侧按钮可触发）
+  useEffect(() => {
+    registerOpenDrawer(() => setOpen(true));
+    return () => registerOpenDrawer(() => {});
+  }, []);
 
   // 全局 PanResponder：左边缘向右滑 → 打开侧边栏
   // 用 onMoveShouldSetPanResponderCapture 让父级在子级之前声明响应
@@ -41,15 +51,19 @@ export default function DrawerLayout() {
 
   return (
     <View style={styles.root} {...panResponder.panHandlers}>
-      <View style={styles.header}>
-        <Pressable onPress={() => setOpen(true)} style={styles.menuBtn} hitSlop={8}>
-          <Text style={styles.menuIcon}>☰</Text>
-        </Pressable>
-        <Text style={styles.headerTitle}>读书记录</Text>
-        <View style={styles.menuBtn} />
-      </View>
-      <View style={styles.body}>
-        <Slot />
+      <View style={styles.safeAreaWrapper}>
+        {showHeader && (
+          <View style={styles.header}>
+            <Pressable onPress={() => setOpen(true)} style={styles.menuBtn} hitSlop={8}>
+              <Text style={styles.menuIcon}>☰</Text>
+            </Pressable>
+            <Text style={styles.headerTitle}>读书记录</Text>
+            <View style={styles.menuBtn} />
+          </View>
+        )}
+        <View style={styles.body}>
+          <Slot />
+        </View>
       </View>
       <Drawer open={open} items={MENU} onClose={() => setOpen(false)} />
     </View>
@@ -58,12 +72,12 @@ export default function DrawerLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F3F5F2' },
+  safeAreaWrapper: { flex: 1, paddingTop: 56 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 56,
     paddingBottom: 12,
     backgroundColor: '#F3F5F2',
   },
