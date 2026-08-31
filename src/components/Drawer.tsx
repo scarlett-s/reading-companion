@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SymbolView } from 'expo-symbols';
+import type { SFSymbol } from 'sf-symbols-typescript';
 import { useRouter, type Href } from 'expo-router';
 import { getAllBooks, getAllEntries } from '@/db';
 import { daysWithEntries } from '@/stats';
@@ -45,7 +46,7 @@ function colorFor(count: number): string {
  * SF Symbols 通过 expo-symbols 的 SymbolView 渲染 — 真正的系统 SF Symbols。
  * 所有图标使用单线（outline / 非填充）变体。
  */
-const SF_SYMBOLS: Record<IconKind, string> = {
+const SF_SYMBOLS: Record<IconKind, SFSymbol> = {
   home: 'house',
   library: 'books.vertical',
   stats: 'chart.bar',
@@ -252,7 +253,11 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   panel: {

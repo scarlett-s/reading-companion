@@ -10,6 +10,7 @@ import { formatProgress, tsToDate } from '@/utils';
 import { entryProgress } from '@/stats';
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const MONTH_LABELS = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
 // 日历格子尺寸：横屏等比换算、严格 7 列、aspectRatio 3:4（宽:高 = 3:4）
 const SCREEN_W = Dimensions.get('window').width;
@@ -64,6 +65,34 @@ interface ProgressRow {
   progress: number;
 }
 
+/** 年视图的 12 列竖向柱图（读书天数 / 笔记数） */
+function MonthBars({ data }: { data: number[] }) {
+  const max = Math.max(...data, 1);
+  return (
+    <View style={styles.monthChartWrap}>
+      <View style={styles.monthChartBars}>
+        {data.map((v, i) => (
+          <View key={i} style={styles.monthChartCol}>
+            <View
+              style={[
+                styles.monthChartBar,
+                { height: v === 0 ? 0 : `${(v / max) * 100}%` },
+              ]}
+            />
+          </View>
+        ))}
+      </View>
+      <View style={styles.monthChartLabels}>
+        {MONTH_LABELS.map((label, i) => (
+          <View key={i} style={styles.monthChartLabelCol}>
+            <Text style={styles.monthChartLabel}>{label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export default function CalendarScreen() {
   const router = useRouter();
   const now = new Date();
@@ -72,6 +101,7 @@ export default function CalendarScreen() {
   const [entriesByDate, setEntriesByDate] = useState<Record<string, ReadingEntry[]>>({});
   const [booksById, setBooksById] = useState<Record<string, Book>>({});
   const [allEntries, setAllEntries] = useState<ReadingEntry[]>([]);
+  const [view, setView] = useState<'month' | 'year'>('month');
   const [menuOpen, setMenuOpen] = useState(false);
 
   const yearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -105,6 +135,12 @@ export default function CalendarScreen() {
     } else {
       setMonth(m);
     }
+  }
+
+  /** 根据当前 view 切粒度：月视图切月，年视图切年 */
+  function shift(delta: number) {
+    if (view === 'month') shiftMonth(delta);
+    else setYear(year + delta);
   }
 
   function goToday() {
@@ -192,168 +228,343 @@ export default function CalendarScreen() {
     [monthEntries]
   );
 
+  // ===== 年视图统计 =====
+
+  const yearEntries = useMemo(
+    () => allEntries.filter((e) => e.date.startsWith(String(year))),
+    [allEntries, year]
+  );
+
+  // 本年读完（finishedAt 落在本年）
+  const yearFinishedCount = useMemo(() => {
+    let n = 0;
+    for (const b of Object.values(booksById)) {
+      if (
+        b.status === 'finished' &&
+        b.finishedAt != null &&
+        tsToDate(b.finishedAt).startsWith(String(year))
+      )
+        n++;
+    }
+    return n;
+  }, [booksById, year]);
+
+  // 本年在读：status='reading' 且本年有记录
+  const yearReadingCount = useMemo(() => {
+    const set = new Set(yearEntries.map((e) => e.bookId));
+    let n = 0;
+    for (const b of Object.values(booksById)) {
+      if (b.status === 'reading' && set.has(b.id)) n++;
+    }
+    return n;
+  }, [booksById, yearEntries]);
+
+  // 阅读天数（去重日期数）
+  const yearReadDays = useMemo(
+    () => new Set(yearEntries.map((e) => e.date)).size,
+    [yearEntries]
+  );
+
+  // 阅读笔记（总条目数）
+  const yearNoteCount = yearEntries.length;
+
+  // 笔记最多的书籍 top 5：按 entry 数倒序
+  const topBooks = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const e of yearEntries) counts.set(e.bookId, (counts.get(e.bookId) ?? 0) + 1);
+    const rows = Array.from(counts.entries())
+      .map(([bookId, count]) => ({ book: booksById[bookId], count }))
+      .filter((x): x is { book: Book; count: number } => !!x.book)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    return rows;
+  }, [yearEntries, booksById]);
+
+  // 每月读书天数（12 月，去重日期）
+  const monthDays = useMemo(() => {
+    const sets: Set<string>[] = new Array(12).fill(null).map(() => new Set());
+    for (const e of yearEntries) {
+      const m = parseInt(e.date.slice(5, 7), 10) - 1;
+      if (m >= 0 && m < 12) sets[m].add(e.date);
+    }
+    return sets.map((s) => s.size);
+  }, [yearEntries]);
+
+  // 每月记录笔记（12 月，entry 总数）
+  const monthNotes = useMemo(() => {
+    const arr = new Array(12).fill(0);
+    for (const e of yearEntries) {
+      const m = parseInt(e.date.slice(5, 7), 10) - 1;
+      if (m >= 0 && m < 12) arr[m]++;
+    }
+    return arr;
+  }, [yearEntries]);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* 顶栏：☰ | 日 历 | ⋯（左按钮呼出侧边栏） */}
+      {/* 顶栏：☰ | 统 计 | ⋯（左按钮呼出侧边栏） */}
       <View style={styles.navBar}>
         <Pressable onPress={openDrawer} hitSlop={8} style={styles.navBtnLeft}>
           <Text style={styles.navIcon}>☰</Text>
         </Pressable>
-        <Text style={styles.navTitle}>日  历</Text>
+        <Text style={styles.navTitle}>统  计</Text>
         <Pressable onPress={() => setMenuOpen(true)} hitSlop={8} style={styles.navBtnRight}>
           <Text style={styles.navIcon}>⋯</Text>
         </Pressable>
       </View>
 
-      {/* 月份导航 */}
+      {/* 月 / 年 toggle（视觉切换，year view 内容暂未实现） */}
+      <View style={styles.toggleRow}>
+        <View style={styles.toggleTrack}>
+          <Pressable
+            style={[styles.toggleBtn, view === 'month' && styles.toggleBtnActive]}
+            onPress={() => setView('month')}>
+            <Text style={[styles.toggleText, view === 'month' && styles.toggleTextActive]}>
+              月
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.toggleBtn, view === 'year' && styles.toggleBtnActive]}
+            onPress={() => setView('year')}>
+            <Text style={[styles.toggleText, view === 'year' && styles.toggleTextActive]}>
+              年
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {/* 月 / 年导航（标题按 view 切换） */}
       <View style={styles.monthNav}>
-        <Pressable onPress={() => shiftMonth(-1)} hitSlop={8} style={styles.monthNavBtn}>
+        <Pressable onPress={() => shift(-1)} hitSlop={8} style={styles.monthNavBtn}>
           <Text style={styles.monthNavIcon}>‹</Text>
         </Pressable>
-        <Text style={styles.monthTitle}>{yearMonth}</Text>
-        <Pressable onPress={() => shiftMonth(1)} hitSlop={8} style={styles.monthNavBtn}>
+        <Text style={styles.monthTitle}>{view === 'month' ? yearMonth : String(year)}</Text>
+        <Pressable onPress={() => shift(1)} hitSlop={8} style={styles.monthNavBtn}>
           <Text style={styles.monthNavIcon}>›</Text>
         </Pressable>
       </View>
 
-      {/* 周次行 */}
-      <View style={styles.weekRow}>
-        {WEEKDAYS.map((w) => (
-          <Text key={w} style={styles.weekday}>
-            {w}
-          </Text>
-        ))}
-      </View>
-
-      {/* 日历 grid：每行独立 flex row，强制 7 格，避免 flexWrap 算成 6 格 */}
-      <View style={styles.grid}>
-        {grid.map((row, ri) => (
-          <View key={ri} style={styles.gridRow}>
-            {row.map((cell, ci) => {
-              const date = cell.type === 'curr'
-                ? `${yearMonth}-${String(cell.day).padStart(2, '0')}`
-                : null;
-              const entries = date ? entriesByDate[date] ?? [] : [];
-              const firstBook = entries.length > 0 ? booksById[entries[0].bookId] : null;
-              const src = coverSource(firstBook?.coverUrl);
-              const isCurr = cell.type === 'curr';
-
-              return (
-                <Pressable
-                  key={ci}
-                  style={[styles.cell, isCurr && styles.cellCurr]}
-                  onPress={() => {
-                    if (firstBook) {
-                      router.push({ pathname: '/library/[id]', params: { id: firstBook.id } });
-                    }
-                  }}>
-                  {src ? (
-                    <Image source={src} style={styles.cellImg} contentFit="cover" />
-                  ) : (
-                    <Text style={[styles.day, !isCurr && styles.dayMuted]}>{cell.day}</Text>
-                  )}
-                </Pressable>
-              );
-            })}
+      {view === 'month' ? (
+        <>
+          {/* 周次行 */}
+          <View style={styles.weekRow}>
+            {WEEKDAYS.map((w) => (
+              <Text key={w} style={styles.weekday}>
+                {w}
+              </Text>
+            ))}
           </View>
-        ))}
-      </View>
 
-      {/* 两个统计卡 */}
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>本月读完</Text>
-          <Text style={styles.statValue}>{finishedCount}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>本月在读</Text>
-          <Text style={styles.statValue}>{readingCount}</Text>
-        </View>
-      </View>
+          {/* 日历 grid：每行独立 flex row，强制 7 格，避免 flexWrap 算成 6 格 */}
+          <View style={styles.grid}>
+            {grid.map((row, ri) => (
+              <View key={ri} style={styles.gridRow}>
+                {row.map((cell, ci) => {
+                  const date = cell.type === 'curr'
+                    ? `${yearMonth}-${String(cell.day).padStart(2, '0')}`
+                    : null;
+                  const entries = date ? entriesByDate[date] ?? [] : [];
+                  const firstBook = entries.length > 0 ? booksById[entries[0].bookId] : null;
+                  const src = coverSource(firstBook?.coverUrl);
+                  const isCurr = cell.type === 'curr';
 
-      {/* 本月进度 */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>本月进度</Text>
-          <Pressable hitSlop={8}>
-            <Text style={styles.cardHeaderIcon}>⇅</Text>
-          </Pressable>
-        </View>
-        {progressRows.length === 0 ? (
-          <Text style={styles.empty}>本月暂无在读进度</Text>
-        ) : (
-          progressRows.map((row) => {
-            const pct = Math.round(row.progress);
-            const high = pct >= 50;
-            const mid = pct >= 20 && pct < 50;
-            return (
-              <View key={row.book.id} style={styles.progressRow}>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressBar,
-                      { width: `${Math.max(pct, 18)}%` },
-                      high ? styles.progressBarHigh : mid ? styles.progressBarMid : styles.progressBarLow,
-                    ]}>
-                    <Text
-                      style={[
-                        styles.progressBarText,
-                        !high && !mid && styles.progressBarTextLow,
-                      ]}>
-                      {pct}%
+                  return (
+                    <Pressable
+                      key={ci}
+                      style={[styles.cell, isCurr && styles.cellCurr]}
+                      onPress={() => {
+                        if (firstBook) {
+                          router.push({ pathname: '/library/[id]', params: { id: firstBook.id } });
+                        }
+                      }}>
+                      {src ? (
+                        <Image source={src} style={styles.cellImg} contentFit="cover" />
+                      ) : (
+                        <Text style={[styles.day, !isCurr && styles.dayMuted]}>{cell.day}</Text>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
+
+          {/* 两个统计卡 */}
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>本月读完</Text>
+              <Text style={styles.statValue}>{finishedCount}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>本月在读</Text>
+              <Text style={styles.statValue}>{readingCount}</Text>
+            </View>
+          </View>
+
+          {/* 本月进度 */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>本月进度</Text>
+              <Pressable hitSlop={8}>
+                <Text style={styles.cardHeaderIcon}>⇅</Text>
+              </Pressable>
+            </View>
+            {progressRows.length === 0 ? (
+              <Text style={styles.empty}>本月暂无在读进度</Text>
+            ) : (
+              progressRows.map((row) => {
+                const pct = Math.round(row.progress);
+                const high = pct >= 50;
+                const mid = pct >= 20 && pct < 50;
+                return (
+                  <View key={row.book.id} style={styles.progressRow}>
+                    <View style={styles.progressTrack}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          { width: `${Math.max(pct, 18)}%` },
+                          high ? styles.progressBarHigh : mid ? styles.progressBarMid : styles.progressBarLow,
+                        ]}>
+                        <Text
+                          style={[
+                            styles.progressBarText,
+                            !high && !mid && styles.progressBarTextLow,
+                          ]}>
+                          {pct}%
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.progressTitle} numberOfLines={1}>
+                      {row.book.title}
                     </Text>
                   </View>
-                </View>
-                <Text style={styles.progressTitle} numberOfLines={1}>
-                  {row.book.title}
-                </Text>
-              </View>
-            );
-          })
-        )}
-      </View>
-
-      {/* 本月笔记 */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>本月笔记</Text>
-        {sortedNotes.length === 0 ? (
-          <Text style={styles.empty}>本月还没有笔记</Text>
-        ) : (
-          <View style={styles.notesList}>
-            {sortedNotes.map((e) => {
-              const book = booksById[e.bookId];
-              const src = coverSource(book?.coverUrl);
-              return (
-                <Pressable
-                  key={e.id}
-                  style={styles.noteRow}
-                  onPress={() =>
-                    router.push({ pathname: '/note/chat/[entryId]', params: { entryId: e.id } })
-                  }>
-                  {src ? (
-                    <Image source={src} style={styles.noteCover} contentFit="cover" />
-                  ) : (
-                    <View style={styles.noteCoverPlaceholder}>
-                      <Text style={styles.noteCoverIcon}>📖</Text>
-                    </View>
-                  )}
-                  <View style={styles.noteBody}>
-                    <Text style={styles.noteDate}>{e.date}</Text>
-                    {!!formatProgress(e) && (
-                      <Text style={styles.noteProgress}>{formatProgress(e)}</Text>
-                    )}
-                    {!!e.comment && (
-                      <Text style={styles.noteComment} numberOfLines={3}>
-                        {e.comment}
-                      </Text>
-                    )}
-                  </View>
-                </Pressable>
-              );
-            })}
+                );
+              })
+            )}
           </View>
-        )}
-      </View>
+
+          {/* 本月笔记 */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>本月笔记</Text>
+            {sortedNotes.length === 0 ? (
+              <Text style={styles.empty}>本月还没有笔记</Text>
+            ) : (
+              <View style={styles.notesList}>
+                {sortedNotes.map((e) => {
+                  const book = booksById[e.bookId];
+                  const src = coverSource(book?.coverUrl);
+                  return (
+                    <Pressable
+                      key={e.id}
+                      style={styles.noteRow}
+                      onPress={() =>
+                        router.push({ pathname: '/note/chat/[entryId]', params: { entryId: e.id } })
+                      }>
+                      {src ? (
+                        <Image source={src} style={styles.noteCover} contentFit="cover" />
+                      ) : (
+                        <View style={styles.noteCoverPlaceholder}>
+                          <Text style={styles.noteCoverIcon}>📖</Text>
+                        </View>
+                      )}
+                      <View style={styles.noteBody}>
+                        <Text style={styles.noteDate}>{e.date}</Text>
+                        {!!formatProgress(e) && (
+                          <Text style={styles.noteProgress}>{formatProgress(e)}</Text>
+                        )}
+                        {!!e.comment && (
+                          <Text style={styles.noteComment} numberOfLines={3}>
+                            {e.comment}
+                          </Text>
+                        )}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        </>
+      ) : (
+        <>
+          {/* 4 个年统计卡（2×2） */}
+          <View style={styles.yearStatsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>今年读完</Text>
+              <Text style={styles.statValue}>{yearFinishedCount}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>今年在读</Text>
+              <Text style={styles.statValue}>{yearReadingCount}</Text>
+            </View>
+          </View>
+          <View style={styles.yearStatsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>阅读天数</Text>
+              <Text style={styles.statValue}>{yearReadDays}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>阅读笔记</Text>
+              <Text style={styles.statValue}>{yearNoteCount}</Text>
+            </View>
+          </View>
+
+          {/* 笔记最多的书籍 */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>笔记最多的书籍</Text>
+              <Pressable hitSlop={8}>
+                <Text style={styles.cardHeaderIcon}>⇅</Text>
+              </Pressable>
+            </View>
+            {topBooks.length === 0 ? (
+              <Text style={styles.empty}>本年暂无笔记</Text>
+            ) : (
+              topBooks.map((row, i) => {
+                const max = topBooks[0].count;
+                const pct = max > 0 ? Math.round((row.count / max) * 100) : 0;
+                const high = pct >= 50;
+                const mid = pct >= 20 && pct < 50;
+                return (
+                  <View key={row.book.id} style={styles.progressRow}>
+                    <View style={styles.progressTrack}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          { width: `${Math.max(pct, 18)}%` },
+                          high ? styles.progressBarHigh : mid ? styles.progressBarMid : styles.progressBarLow,
+                        ]}>
+                        <Text
+                          style={[
+                            styles.progressBarText,
+                            !high && !mid && styles.progressBarTextLow,
+                          ]}>
+                          {row.count}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.progressTitle} numberOfLines={1}>
+                      {row.book.title}
+                    </Text>
+                  </View>
+                );
+              })
+            )}
+          </View>
+
+          {/* 每月读书天数 */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>每月读书天数</Text>
+            <MonthBars data={monthDays} />
+          </View>
+
+          {/* 每月记录笔记 */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>每月记录笔记</Text>
+            <MonthBars data={monthNotes} />
+          </View>
+        </>
+      )}
 
       {/* ⋯ 菜单 */}
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
@@ -396,6 +607,30 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     letterSpacing: 6,
   },
+
+  // 月 / 年 toggle
+  toggleRow: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    marginBottom: 6,
+  },
+  toggleTrack: {
+    flexDirection: 'row',
+    backgroundColor: '#D4D4D4',
+    borderRadius: 6,
+    padding: 3,
+    width: '100%',
+  },
+  toggleBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  toggleBtnActive: { backgroundColor: '#FFFFFF' },
+  toggleText: { fontSize: 14, color: '#1a1a1a', fontWeight: '500' },
+  toggleTextActive: { fontWeight: '600' },
 
   // 月份导航
   monthNav: {
@@ -453,6 +688,11 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 12,
   },
+  yearStatsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
   statCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -466,6 +706,45 @@ const styles = StyleSheet.create({
   // 标签跟本月进度 cardTitle 同款（16 / 700）
   statLabel: { fontSize: 16, color: '#1a1a1a', fontWeight: '700' },
   statValue: { fontSize: 22, fontWeight: '700', color: '#1a1a1a' },
+
+  // 年视图 12 列竖向柱图
+  monthChartWrap: {
+    paddingTop: 12,
+  },
+  monthChartBars: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 120,
+    gap: 4,
+  },
+  monthChartCol: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'flex-end',
+  },
+  monthChartBar: {
+    width: '100%',
+    backgroundColor: '#9CC76F',
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    minHeight: 2,
+  },
+  monthChartLabels: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 10,
+    height: 32,
+  },
+  monthChartLabelCol: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  monthChartLabel: {
+    fontSize: 10,
+    color: '#888',
+    transform: [{ rotate: '-30deg' }],
+  },
 
   // 通用卡片
   card: {

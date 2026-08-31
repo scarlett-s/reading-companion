@@ -9,16 +9,15 @@ const PANEL_WIDTH = Math.round(Dimensions.get('window').width * 0.8);
 const MENU: DrawerItem[] = [
   { label: '首页', path: '/', icon: 'home' },
   { label: '书库', path: '/library', icon: 'library' },
-  { label: '统计', path: '/stats', icon: 'stats' },
-  { label: '日历', path: '/calendar', icon: 'calendar' },
+  { label: '统计', path: '/calendar', icon: 'stats' },
   { label: '设置', path: '/settings', icon: 'settings' },
 ];
 
 export default function DrawerLayout() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  // 日历页自带 nav bar，drawer header 让位
-  const showHeader = pathname !== '/calendar';
+  // 日历 / 设置页自带 nav bar，drawer header 让位；/settings/* 子页同理
+  const showHeader = pathname !== '/calendar' && !pathname.startsWith('/settings');
 
   // 把 setOpen 暴露给子页面（日历页左侧按钮可触发）
   useEffect(() => {
