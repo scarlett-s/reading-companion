@@ -18,6 +18,7 @@ import { entryHasAI } from '@/utils';
 import { ReadingEntry } from '@/types';
 import NoteCard from '@/components/NoteCard';
 import NoteMenu from '@/components/NoteMenu';
+import EmptyState from '@/components/EmptyState';
 import { Pressable } from '@/components/Pressable';
 import { colors, spacing, radius, typography, shadow } from '@/theme';
 
@@ -130,7 +131,11 @@ export default function HomeScreen() {
         onScroll={(e) => setScrollOffset(e.nativeEvent.contentOffset.y)}
         scrollEventThrottle={16}>
         {notes.length === 0 ? (
-          <Text style={styles.empty}>还没有笔记，点右下角 ＋ 开始记录</Text>
+          <EmptyState
+            symbol="square.and.pencil"
+            title="还没有笔记"
+            hint="点右下角 ＋ 记录第一条读书笔记。"
+          />
         ) : (
           notes.map((n) => (
             <NoteCard
@@ -230,7 +235,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: 120 },
-  empty: { color: colors.textSubtle, textAlign: 'center', marginTop: 40 },
   fab: {
     position: 'absolute',
     bottom: 52,

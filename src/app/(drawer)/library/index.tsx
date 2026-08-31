@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllBooks, getRecentBooks } from '@/db';
 import { Book } from '@/types';
 import BookCover from '@/components/BookCover';
+import EmptyState from '@/components/EmptyState';
 import { Pressable } from '@/components/Pressable';
 import { colors, spacing, radius, typography } from '@/theme';
 
@@ -133,7 +134,13 @@ export default function LibraryScreen() {
                 </Pressable>
               ))}
             </View>
-            {filtered.length === 0 && <Text style={styles.empty}>书库还没有书</Text>}
+            {filtered.length === 0 && (
+              <EmptyState
+                symbol="books.vertical"
+                title="书库还没有书"
+                hint="点「添加图书」开始建立你的书库。"
+              />
+            )}
           </>
         )}
       </ScrollView>
@@ -191,5 +198,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  empty: { color: colors.textSubtle, fontSize: 14, marginTop: spacing.sm },
 });

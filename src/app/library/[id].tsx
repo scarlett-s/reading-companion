@@ -24,6 +24,9 @@ import BookStats from '@/components/BookStats';
 import InsightTabs from '@/components/InsightTabs';
 import ReadingTimeline from '@/components/ReadingTimeline';
 import AIInsightCard from '@/components/AIInsightCard';
+import Skeleton from '@/components/Skeleton';
+import EmptyState from '@/components/EmptyState';
+import FadeIn from '@/components/FadeIn';
 import { Pressable } from '@/components/Pressable';
 import { colors, spacing, radius, typography, shadow } from '@/theme';
 
@@ -81,8 +84,26 @@ export default function BookDetailScreen() {
 
   if (!book) {
     return (
-      <View style={styles.center}>
-        <Text>加载中…</Text>
+      <View style={[styles.root, { paddingTop: insets.top }]}>
+        <View style={styles.skeletonNav}>
+          <Skeleton width={40} height={40} borderRadius={radius.pill} />
+        </View>
+        <View style={styles.skeletonHero}>
+          <Skeleton width={COVER_W} height={COVER_H} borderRadius={radius.md} />
+          <View style={styles.skeletonInfo}>
+            <Skeleton width="85%" height={22} />
+            <Skeleton width="55%" height={15} />
+            <Skeleton width="70%" height={15} />
+            <Skeleton width={96} height={13} />
+            <Skeleton width={120} height={16} />
+          </View>
+        </View>
+        <View style={styles.skeletonContent}>
+          <Skeleton width={96} height={15} />
+          <Skeleton width="100%" height={64} borderRadius={radius.lg} />
+          <Skeleton width="100%" height={64} borderRadius={radius.lg} />
+          <Skeleton width="100%" height={64} borderRadius={radius.lg} />
+        </View>
       </View>
     );
   }
@@ -150,7 +171,7 @@ export default function BookDetailScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <FadeIn style={styles.root}>
       {/* 顶部 Hero — 白色背景 */}
       <View style={[styles.hero, { paddingTop: insets.top }]}>
         {/* 导航栏：back | 占位 | ♡ | ⋯ */}
@@ -218,7 +239,11 @@ export default function BookDetailScreen() {
         <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
           {tab === 'notes' ? (
             entries.length === 0 ? (
-              <Text style={styles.empty}>还没有笔记</Text>
+              <EmptyState
+                symbol="square.and.pencil"
+                title="还没有笔记"
+                hint="阅读时随手记下想法，笔记会按日期整理在这里。"
+              />
             ) : (
               <ReadingTimeline
                 entries={entries}
@@ -226,7 +251,11 @@ export default function BookDetailScreen() {
               />
             )
           ) : reflectionsSorted.length === 0 ? (
-            <Text style={styles.empty}>还没有 AI 洞察</Text>
+            <EmptyState
+              symbol="sparkles"
+              title="还没有 AI 洞察"
+              hint="积累 6 条以上笔记后，可生成对这本书的 AI 洞察。"
+            />
           ) : (
             <View>
               {reflectionsSorted.map((r) => (
@@ -251,13 +280,23 @@ export default function BookDetailScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+    </FadeIn>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+  // Loading skeleton — mirrors hero + content layout
+  skeletonNav: { paddingHorizontal: spacing.sm, paddingBottom: spacing.md },
+  skeletonHero: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xl,
+    paddingHorizontal: spacing.md,
+  },
+  skeletonInfo: { flex: 1, gap: spacing.sm, paddingTop: spacing.xs },
+  skeletonContent: { padding: spacing.md, paddingTop: spacing.xxl, gap: spacing.md },
 
   // Hero
   hero: { backgroundColor: colors.surface },
@@ -335,7 +374,6 @@ const styles = StyleSheet.create({
   listContent: { paddingTop: spacing.sm, paddingBottom: spacing.xxxl },
 
   error: { paddingHorizontal: spacing.md, color: colors.danger, fontSize: 13, marginTop: spacing.xs },
-  empty: { color: colors.textSubtle, fontSize: 14, padding: spacing.xl, textAlign: 'center' },
 
   // Menu
   menuBackdrop: { flex: 1, backgroundColor: colors.backdrop, justifyContent: 'center', alignItems: 'center' },

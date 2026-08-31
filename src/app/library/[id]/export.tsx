@@ -13,6 +13,8 @@ import { bookToMarkdown, markdownToPlainText, markdownToHtml } from '@/export';
 import { shareText } from '@/share';
 import { Book, ReadingEntry } from '@/types';
 import { Pressable } from '@/components/Pressable';
+import Skeleton from '@/components/Skeleton';
+import FadeIn from '@/components/FadeIn';
 import { colors, spacing, radius, typography } from '@/theme';
 
 type Format = 'md' | 'txt' | 'html';
@@ -60,8 +62,15 @@ export default function ExportBookScreen() {
 
   if (!book) {
     return (
-      <View style={styles.center}>
-        <Text>加载中…</Text>
+      <View style={styles.container}>
+        <View style={styles.skeletonContent}>
+          <Skeleton width="70%" height={22} />
+          <Skeleton width={140} height={13} />
+          <Skeleton width="45%" height={13} />
+          <Skeleton width="100%" height={96} borderRadius={radius.md + 2} />
+          <Skeleton width="45%" height={13} />
+          <Skeleton width="100%" height={132} borderRadius={radius.md + 2} />
+        </View>
       </View>
     );
   }
@@ -69,8 +78,9 @@ export default function ExportBookScreen() {
   const aiCount = entries.filter((e) => e.discussion && e.discussion.length > 0).length;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.bookTitle} numberOfLines={2}>{book.title}</Text>
+    <FadeIn style={styles.container}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <Text style={styles.bookTitle} numberOfLines={2}>{book.title}</Text>
       <Text style={styles.meta}>{entries.length} 条笔记{includeAi ? ` · ${aiCount} 条含 AI 对话` : ''}</Text>
 
       <Section title="导出范围">
@@ -110,7 +120,8 @@ export default function ExportBookScreen() {
         {busy ? <ActivityIndicator color={colors.primaryText} /> : <Text style={styles.exportBtnText}>导出并分享</Text>}
       </Pressable>
       <Text style={styles.hint}>导出后会触发系统分享面板，可保存到「文件」/ 复制内容 / 发到其他 App。</Text>
-    </ScrollView>
+      </ScrollView>
+    </FadeIn>
   );
 }
 
@@ -149,8 +160,9 @@ function RadioRow({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   content: { padding: spacing.xl, gap: spacing.xl },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  skeletonContent: { padding: spacing.xl, gap: spacing.lg },
   bookTitle: { ...typography.title, fontSize: 20, color: colors.text },
   meta: { color: colors.textSubtle, fontSize: 13, marginTop: -spacing.lg },
 
