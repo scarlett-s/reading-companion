@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Modal, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Modal, Dimensions } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { Image, type ImageSource } from 'expo-image';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getEntriesByMonth, getAllBooks, getAllEntries } from '@/db';
@@ -8,6 +9,8 @@ import { openDrawer } from '@/drawerControl';
 import { Book, ReadingEntry } from '@/types';
 import { formatProgress, tsToDate } from '@/utils';
 import { entryProgress } from '@/stats';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography, shadow } from '@/theme';
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const MONTH_LABELS = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
@@ -305,11 +308,11 @@ export default function CalendarScreen() {
       {/* 顶栏：☰ | 统 计 | ⋯（左按钮呼出侧边栏） */}
       <View style={styles.navBar}>
         <Pressable onPress={openDrawer} hitSlop={8} style={styles.navBtnLeft}>
-          <Text style={styles.navIcon}>☰</Text>
+          <SymbolView name="line.3.horizontal" size={22} tintColor={colors.text} type="monochrome" />
         </Pressable>
-        <Text style={styles.navTitle}>统  计</Text>
+        <Text style={styles.navTitle}>统计</Text>
         <Pressable onPress={() => setMenuOpen(true)} hitSlop={8} style={styles.navBtnRight}>
-          <Text style={styles.navIcon}>⋯</Text>
+          <SymbolView name="ellipsis" size={22} tintColor={colors.text} type="monochrome" />
         </Pressable>
       </View>
 
@@ -336,11 +339,11 @@ export default function CalendarScreen() {
       {/* 月 / 年导航（标题按 view 切换） */}
       <View style={styles.monthNav}>
         <Pressable onPress={() => shift(-1)} hitSlop={8} style={styles.monthNavBtn}>
-          <Text style={styles.monthNavIcon}>‹</Text>
+          <SymbolView name="chevron.left" size={22} tintColor={colors.text} type="monochrome" />
         </Pressable>
         <Text style={styles.monthTitle}>{view === 'month' ? yearMonth : String(year)}</Text>
         <Pressable onPress={() => shift(1)} hitSlop={8} style={styles.monthNavBtn}>
-          <Text style={styles.monthNavIcon}>›</Text>
+          <SymbolView name="chevron.right" size={22} tintColor={colors.text} type="monochrome" />
         </Pressable>
       </View>
 
@@ -406,7 +409,7 @@ export default function CalendarScreen() {
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>本月进度</Text>
               <Pressable hitSlop={8}>
-                <Text style={styles.cardHeaderIcon}>⇅</Text>
+                <SymbolView name="arrow.up.arrow.down" size={16} tintColor={colors.textMuted} type="monochrome" />
               </Pressable>
             </View>
             {progressRows.length === 0 ? (
@@ -464,7 +467,7 @@ export default function CalendarScreen() {
                         <Image source={src} style={styles.noteCover} contentFit="cover" />
                       ) : (
                         <View style={styles.noteCoverPlaceholder}>
-                          <Text style={styles.noteCoverIcon}>📖</Text>
+                          <SymbolView name="book.closed" size={20} tintColor={colors.textSubtle} type="monochrome" />
                         </View>
                       )}
                       <View style={styles.noteBody}>
@@ -514,7 +517,7 @@ export default function CalendarScreen() {
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>笔记最多的书籍</Text>
               <Pressable hitSlop={8}>
-                <Text style={styles.cardHeaderIcon}>⇅</Text>
+                <SymbolView name="arrow.up.arrow.down" size={16} tintColor={colors.textMuted} type="monochrome" />
               </Pressable>
             </View>
             {topBooks.length === 0 ? (
@@ -588,36 +591,33 @@ const CARD_RADIUS = 16;
 const PROGRESS_TRACK_W = 120;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F5F2' },
-  content: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 32 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.xxxl },
 
   // 顶栏
   navBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
   },
-  navBtnLeft: { width: 36, alignItems: 'flex-start' },
-  navBtnRight: { width: 36, alignItems: 'flex-end' },
-  navIcon: { fontSize: 24, fontWeight: '300', color: '#1a1a1a', lineHeight: 28 },
+  navBtnLeft: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
+  navBtnRight: { width: 44, height: 44, alignItems: 'flex-end', justifyContent: 'center' },
   navTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    letterSpacing: 6,
+    ...typography.heading,
+    color: colors.text,
   },
 
   // 月 / 年 toggle
   toggleRow: {
     alignItems: 'center',
-    paddingVertical: 6,
-    marginBottom: 6,
+    paddingVertical: spacing.xs + 2,
+    marginBottom: spacing.xs + 2,
   },
   toggleTrack: {
     flexDirection: 'row',
-    backgroundColor: '#D4D4D4',
-    borderRadius: 6,
+    backgroundColor: colors.borderStrong,
+    borderRadius: radius.sm - 2,
     padding: 3,
     width: '100%',
   },
@@ -625,11 +625,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    borderRadius: 4,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.sm - 4,
   },
-  toggleBtnActive: { backgroundColor: '#FFFFFF' },
-  toggleText: { fontSize: 14, color: '#1a1a1a', fontWeight: '500' },
+  toggleBtnActive: { backgroundColor: colors.surface },
+  toggleText: { fontSize: 14, color: colors.text, fontWeight: '500' },
   toggleTextActive: { fontWeight: '600' },
 
   // 月份导航
@@ -637,30 +637,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    paddingVertical: spacing.md + 2,
   },
-  monthNavBtn: { paddingHorizontal: 14, paddingVertical: 4 },
-  monthNavIcon: { fontSize: 24, fontWeight: '300', color: '#1a1a1a' },
-  monthTitle: { fontSize: 19, fontWeight: '700', color: '#1a1a1a' },
+  monthNavBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  monthTitle: { fontSize: 24, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
 
   // 周次
   weekRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
     paddingHorizontal: 2,
   },
   weekday: {
     flex: 1,
     textAlign: 'center',
     fontSize: 11,
-    color: '#aaa',
+    color: colors.textSubtle,
     letterSpacing: 1.2,
     fontWeight: '600',
   },
 
   // 日历 grid：每行 gridRow 独立 flex，强制 7 格
   grid: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   gridRow: {
     flexDirection: 'row',
@@ -672,50 +671,50 @@ const styles = StyleSheet.create({
     height: CELL_H,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: radius.sm,
     overflow: 'hidden',
   },
   cellCurr: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   cellImg: { width: '100%', height: '100%' },
-  day: { fontSize: 14, color: '#1a1a1a', fontWeight: '500' },
-  dayMuted: { color: '#cfcfcf', fontWeight: '400' },
+  day: { fontSize: 14, color: colors.text, fontWeight: '500' },
+  dayMuted: { color: colors.textSubtle, fontWeight: '400' },
 
   // 统计卡
   statsRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
+    gap: spacing.sm + 2,
+    marginBottom: spacing.md,
   },
   yearStatsRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
+    gap: spacing.sm + 2,
+    marginBottom: spacing.md,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
+    paddingVertical: spacing.lg + 2,
+    paddingHorizontal: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   // 标签跟本月进度 cardTitle 同款（16 / 700）
-  statLabel: { fontSize: 16, color: '#1a1a1a', fontWeight: '700' },
-  statValue: { fontSize: 22, fontWeight: '700', color: '#1a1a1a' },
+  statLabel: { fontSize: 16, color: colors.text, fontWeight: '700' },
+  statValue: { fontSize: 22, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
 
   // 年视图 12 列竖向柱图
   monthChartWrap: {
-    paddingTop: 12,
+    paddingTop: spacing.md,
   },
   monthChartBars: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     height: 120,
-    gap: 4,
+    gap: spacing.xs,
   },
   monthChartCol: {
     flex: 1,
@@ -724,15 +723,15 @@ const styles = StyleSheet.create({
   },
   monthChartBar: {
     width: '100%',
-    backgroundColor: '#9CC76F',
+    backgroundColor: colors.primary,
     borderTopLeftRadius: 2,
     borderTopRightRadius: 2,
     minHeight: 2,
   },
   monthChartLabels: {
     flexDirection: 'row',
-    gap: 4,
-    marginTop: 10,
+    gap: spacing.xs,
+    marginTop: spacing.sm + 2,
     height: 32,
   },
   monthChartLabelCol: {
@@ -742,32 +741,33 @@ const styles = StyleSheet.create({
   },
   monthChartLabel: {
     fontSize: 10,
-    color: '#888',
+    color: colors.textSubtle,
     transform: [{ rotate: '-30deg' }],
   },
 
   // 通用卡片
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    padding: 18,
-    marginBottom: 12,
+    padding: spacing.lg + 2,
+    marginBottom: spacing.md,
+    ...shadow.subtle,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: spacing.md + 2,
   },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a1a' },
-  cardHeaderIcon: { fontSize: 18, color: '#888', fontWeight: '500' },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  cardHeaderIcon: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
 
   // 进度条
   progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    gap: 12,
+    marginBottom: spacing.sm + 2,
+    gap: spacing.md,
   },
   progressTrack: {
     width: PROGRESS_TRACK_W,
@@ -777,63 +777,63 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 20,
     borderRadius: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-  progressBarHigh: { backgroundColor: '#9CC76F' },
-  progressBarMid: { backgroundColor: '#1f1f1f' },
+  progressBarHigh: { backgroundColor: colors.primary },
+  progressBarMid: { backgroundColor: colors.text },
   progressBarLow: { backgroundColor: '#C8E2A8' },
-  progressBarText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  progressBarText: { color: colors.surface, fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] },
   progressBarTextLow: { color: '#3B6B2E' },
-  progressTitle: { flex: 1, fontSize: 14, color: '#1a1a1a' },
+  progressTitle: { flex: 1, fontSize: 14, color: colors.text },
 
   // 笔记列表
-  notesList: { marginTop: 10 },
+  notesList: { marginTop: spacing.sm + 2 },
   noteRow: {
     flexDirection: 'row',
-    paddingVertical: 14,
-    gap: 12,
+    paddingVertical: spacing.md + 2,
+    gap: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#f2f2f2',
+    borderTopColor: colors.border,
   },
   noteCover: {
     width: 44,
     height: 60,
-    borderRadius: 4,
-    backgroundColor: '#e8e8e8',
+    borderRadius: radius.sm - 4,
+    backgroundColor: colors.surfaceMuted,
   },
   noteCoverPlaceholder: {
     width: 44,
     height: 60,
-    borderRadius: 4,
-    backgroundColor: '#e8e8e8',
+    borderRadius: radius.sm - 4,
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  noteCoverIcon: { fontSize: 18 },
-  noteBody: { flex: 1, gap: 4 },
-  noteDate: { fontSize: 12, color: '#888' },
-  noteProgress: { fontSize: 14, color: '#1a1a1a', fontWeight: '600' },
-  noteComment: { fontSize: 13, color: '#555', lineHeight: 19 },
+  noteBody: { flex: 1, gap: spacing.xs },
+  noteDate: { fontSize: 12, color: colors.textSubtle },
+  noteProgress: { ...typography.body, fontSize: 14, color: colors.text, fontWeight: '600' },
+  noteComment: { fontSize: 13, color: colors.textMuted, lineHeight: 19 },
 
-  empty: { fontSize: 13, color: '#999', marginTop: 4 },
+  empty: { fontSize: 13, color: colors.textSubtle, marginTop: spacing.xs },
 
   // 菜单
   menuBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: colors.backdrop,
     justifyContent: 'center',
     alignItems: 'center',
   },
   menuPanel: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md + 2,
     width: '70%',
     overflow: 'hidden',
+    ...shadow.floating,
   },
-  menuItem: { paddingVertical: 14, alignItems: 'center' },
-  menuItemText: { fontSize: 15, color: '#222' },
-  menuDivider: { height: 1, backgroundColor: '#f0f0f0' },
+  menuItem: { paddingVertical: spacing.md + 2, alignItems: 'center' },
+  menuItemText: { ...typography.body, fontSize: 15, color: colors.text },
+  menuDivider: { height: 1, backgroundColor: colors.border },
 });

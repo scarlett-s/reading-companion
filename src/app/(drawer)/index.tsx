@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import {
   View,
   Text,
-  Pressable,
   ScrollView,
   StyleSheet,
   Modal,
@@ -11,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllEntries, getAllBooks, updateEntry } from '@/db';
 import { onEntrySaved } from '@/embedding';
@@ -18,6 +18,8 @@ import { entryHasAI } from '@/utils';
 import { ReadingEntry } from '@/types';
 import NoteCard from '@/components/NoteCard';
 import NoteMenu from '@/components/NoteMenu';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography, shadow } from '@/theme';
 
 interface Note {
   id: string;
@@ -162,8 +164,8 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      <Pressable style={styles.fab} onPress={() => router.push('/note/new')}>
-        <Text style={styles.fabText}>＋</Text>
+      <Pressable scale={0.94} style={styles.fab} onPress={() => router.push('/note/new')}>
+        <SymbolView name="plus" size={26} tintColor={colors.primaryText} type="monochrome" />
       </Pressable>
 
       {showFloatingCollapse && (
@@ -226,9 +228,9 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F3F5F2' },
-  content: { padding: 16, gap: 16, paddingBottom: 120 },
-  empty: { color: '#999', textAlign: 'center', marginTop: 40 },
+  root: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: 120 },
+  empty: { color: colors.textSubtle, textAlign: 'center', marginTop: 40 },
   fab: {
     position: 'absolute',
     bottom: 52,
@@ -237,55 +239,46 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#7CB342',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+    ...shadow.floating,
   },
-  fabText: { color: '#fff', fontSize: 30, lineHeight: 34 },
   collapseFloating: {
     position: 'absolute',
-    left: 16,
+    left: spacing.lg,
     bottom: 52,
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg + 2,
+    paddingVertical: spacing.sm + 2,
+    ...shadow.card,
   },
-  collapseFloatingText: { color: '#208AEF', fontWeight: '600', fontSize: 14 },
-  discussionOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.55)' },
+  collapseFloatingText: { color: colors.accent, ...typography.bodyStrong, fontSize: 14 },
+  discussionOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.overlay },
   discussionCard: {
     width: Math.round(Dimensions.get('window').width * 0.78),
     height: Math.round(Dimensions.get('window').height * 0.75),
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     overflow: 'hidden',
   },
   discussionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md + 2,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.border,
   },
-  discussionTitle: { fontSize: 17, fontWeight: '600' },
-  discussionClose: { fontSize: 15, color: '#208AEF', fontWeight: '600' },
+  discussionTitle: { ...typography.heading },
+  discussionClose: { ...typography.body, color: colors.accent, fontWeight: '600' },
   discussionScroll: { flex: 1 },
-  discussionContent: { padding: 16, gap: 10, flexGrow: 1 },
-  discussionEmpty: { color: '#999', fontSize: 14, textAlign: 'center', marginTop: 24 },
-  bubbleAI: { alignSelf: 'flex-start', backgroundColor: '#f0f0f0', borderRadius: 12, padding: 10, maxWidth: '85%' },
-  bubbleUser: { alignSelf: 'flex-end', backgroundColor: '#208AEF', borderRadius: 12, padding: 10, maxWidth: '85%' },
-  bubbleTextAI: { fontSize: 14, lineHeight: 20, color: '#222' },
-  bubbleTextUser: { fontSize: 14, lineHeight: 20, color: '#fff' },
+  discussionContent: { padding: spacing.lg, gap: 10, flexGrow: 1 },
+  discussionEmpty: { color: colors.textSubtle, textAlign: 'center', marginTop: 24 },
+  bubbleAI: { alignSelf: 'flex-start', backgroundColor: colors.surfaceMuted, borderRadius: radius.md, padding: spacing.sm + 2, maxWidth: '85%' },
+  bubbleUser: { alignSelf: 'flex-end', backgroundColor: colors.accent, borderRadius: radius.md, padding: spacing.sm + 2, maxWidth: '85%' },
+  bubbleTextAI: { fontSize: 14, lineHeight: 20, color: colors.text },
+  bubbleTextUser: { fontSize: 14, lineHeight: 20, color: colors.surface },
 });

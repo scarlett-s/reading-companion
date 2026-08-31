@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Reflection } from '@/types';
+import { colors, spacing, radius, typography } from '@/theme';
 
 interface AIInsightCardProps {
   reflection: Reflection;
@@ -38,22 +39,22 @@ export default function AIInsightCard({ reflection }: AIInsightCardProps) {
 
 const styles = StyleSheet.create({
   dateGroup: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   dateHeader: {
-    color: '#9C9C9C',
-    fontSize: 13,
+    ...typography.caption,
+    color: colors.textSubtle,
     fontWeight: '400',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   card: {
-    backgroundColor: '#eaf6e6',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 8,
+    backgroundColor: '#EAF3E4',
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md + 2,
+    gap: spacing.sm,
   },
   cardTop: {
     flexDirection: 'row',
@@ -61,16 +62,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardProgress: {
-    color: '#388E3C',
+    color: '#3F6B2A',
     fontSize: 11,
     fontWeight: '700',
   },
   cardDate: {
-    color: '#1a1a1a',
+    ...typography.micro,
     fontSize: 11,
+    color: colors.text,
   },
   cardBody: {
-    color: '#222',
+    ...typography.caption,
+    color: colors.text,
     fontSize: 13,
     lineHeight: 19,
   },
@@ -80,7 +83,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   expandText: {
-    color: '#388E3C',
+    color: '#3F6B2A',
     fontSize: 11,
     fontWeight: '500',
   },

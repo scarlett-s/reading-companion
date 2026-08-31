@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, PanResponder, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, PanResponder, Dimensions } from 'react-native';
 import { Slot, usePathname } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import Drawer, { DrawerItem } from '@/components/Drawer';
+import { Pressable } from '@/components/Pressable';
 import { registerOpenDrawer } from '@/drawerControl';
+import { colors, spacing, typography } from '@/theme';
 
 const PANEL_WIDTH = Math.round(Dimensions.get('window').width * 0.8);
 
@@ -54,7 +57,7 @@ export default function DrawerLayout() {
         {showHeader && (
           <View style={styles.header}>
             <Pressable onPress={() => setOpen(true)} style={styles.menuBtn} hitSlop={8}>
-              <Text style={styles.menuIcon}>☰</Text>
+              <SymbolView name="line.3.horizontal" size={22} tintColor={colors.text} type="monochrome" />
             </Pressable>
             <Text style={styles.headerTitle}>读书记录</Text>
             <View style={styles.menuBtn} />
@@ -70,18 +73,17 @@ export default function DrawerLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F3F5F2' },
+  root: { flex: 1, backgroundColor: colors.bg },
   safeAreaWrapper: { flex: 1, paddingTop: 56 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#F3F5F2',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.bg,
   },
-  menuBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  menuIcon: { fontSize: 22, color: '#222' },
-  headerTitle: { fontSize: 17, fontWeight: '600' },
+  menuBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { ...typography.heading, color: colors.text },
   body: { flex: 1 },
 });

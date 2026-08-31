@@ -1,7 +1,8 @@
 import { View, StyleSheet } from 'react-native';
 import { heatmapCells } from '@/stats';
+import { colors, radius } from '@/theme';
 
-const COLORS = ['#ebedf0', '#c6e48b', '#7bc96f', '#239a3b', '#196127'];
+const COLORS = ['#EBEDE8', '#C6E48B', '#9CC76F', '#7CB342', '#5A8F2F'];
 
 function colorFor(count: number): string {
   if (count <= 0) return COLORS[0];
@@ -37,5 +38,5 @@ export default function HeatMap({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 3 },
   col: { gap: 3 },
-  cell: { width: 10, height: 10, borderRadius: 2 },
+  cell: { width: 10, height: 10, borderRadius: radius.sm - 6 },
 });

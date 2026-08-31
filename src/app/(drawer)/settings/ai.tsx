@@ -3,15 +3,17 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
-  StyleSheet,
   ScrollView,
+  StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { useRouter } from 'expo-router';
 import { getSettings, saveSetting } from '@/db';
 import { AISettings } from '@/types';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography } from '@/theme';
 
 const DEEPSEEK: AISettings = { baseUrl: 'https://api.deepseek.com', apiKey: '', model: 'deepseek-chat', embeddingModel: '' };
 const OLLAMA: AISettings = { baseUrl: 'http://localhost:11434/v1', apiKey: '', model: 'llama3', embeddingModel: 'nomic-embed-text' };
@@ -47,7 +49,7 @@ export default function AIConfigScreen() {
       {/* 顶部 nav bar：< | AI 配置 | 占位 */}
       <View style={styles.navBar}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={styles.navBtn}>
-          <Text style={styles.navIcon}>‹</Text>
+          <SymbolView name="chevron.left" size={24} tintColor={colors.text} type="monochrome" />
         </Pressable>
         <View style={styles.navTitleLayer} pointerEvents="none">
           <Text style={styles.navTitle}>AI 配置</Text>
@@ -100,8 +102,11 @@ export default function AIConfigScreen() {
           </Text>
 
           <Pressable style={styles.saveBtn} onPress={save}>
-            <Text style={styles.saveText}>{saved ? '已保存 ✓' : '保存'}</Text>
+            <Text style={styles.saveText}>{saved ? '已保存' : '保存'}</Text>
           </Pressable>
+          {saved && (
+            <Text style={styles.savedHint}>已保存到本地，立即生效</Text>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -135,15 +140,18 @@ function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
+        placeholderTextColor={colors.textSubtle}
         autoCapitalize="none"
         autoCorrect={false}
+        selectionColor={colors.accent}
+        cursorColor={colors.accent}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F3F5F2' },
+  root: { flex: 1, backgroundColor: colors.bg },
 
   // Nav bar
   navBar: {
@@ -151,10 +159,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     height: 44,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm + 2,
   },
-  navBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  navIcon: { fontSize: 26, color: '#1a1a1a', lineHeight: 28 },
+  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   navTitleLayer: {
     position: 'absolute',
     left: 0,
@@ -164,42 +171,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navTitle: {
-    color: '#1a1a1a',
+    color: colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
 
   // Form
   scroll: { flex: 1 },
-  content: { padding: 16, gap: 16 },
-  hint: { fontSize: 13, color: '#666', lineHeight: 19 },
-  presetRow: { flexDirection: 'row', gap: 12 },
+  content: { padding: spacing.lg, gap: spacing.lg },
+  hint: { fontSize: 13, color: colors.textMuted, lineHeight: 19 },
+  presetRow: { flexDirection: 'row', gap: spacing.md },
   presetBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md - 2,
+    borderRadius: radius.md - 2,
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  presetText: { fontSize: 14 },
-  field: { gap: 6 },
-  fieldLabel: { fontSize: 13, color: '#555' },
+  presetText: { fontSize: 14, color: colors.text },
+  field: { gap: spacing.xs + 2 },
+  fieldLabel: { ...typography.caption, fontSize: 13, color: colors.textMuted },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md - 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md - 2,
     fontSize: 15,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
+    color: colors.text,
   },
   saveBtn: {
-    backgroundColor: '#208AEF',
-    borderRadius: 8,
-    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md - 2,
+    paddingVertical: spacing.md + 2,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
-  saveText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  saveText: { color: colors.primaryText, fontSize: 16, fontWeight: '600' },
+  savedHint: { color: colors.primary, fontSize: 13, textAlign: 'center' },
 });

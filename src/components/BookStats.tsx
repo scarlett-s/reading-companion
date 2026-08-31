@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { colors, spacing, typography } from '@/theme';
 
 interface BookStatsProps {
   /** 自上次阅读过去了多少天 */
@@ -37,27 +38,28 @@ function StatCell({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    paddingTop: 4,
-    paddingBottom: 4,
-    gap: 12,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
+    gap: spacing.md,
   },
   cell: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
   },
   label: {
-    color: '#1a1a1a',
+    ...typography.micro,
+    color: colors.textMuted,
     fontSize: 12,
-    fontWeight: '400',
     lineHeight: 16,
     textAlign: 'center',
   },
   value: {
-    color: '#1a1a1a',
+    ...typography.bodyStrong,
     fontSize: 16,
-    fontWeight: '600',
+    color: colors.text,
     lineHeight: 22,
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
 });

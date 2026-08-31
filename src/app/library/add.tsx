@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   FlatList,
   StyleSheet,
   ActivityIndicator,
@@ -16,6 +15,8 @@ import { searchBooks as searchDouban, fetchDoubanDetail } from '@/douban';
 import { addBook, generateId } from '@/db';
 import { Book, BookSearchResult } from '@/types';
 import BookCover from '@/components/BookCover';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography } from '@/theme';
 
 const DOUBAN_RETRIES = 2;
 
@@ -129,6 +130,7 @@ export default function AddBookScreen() {
           value={query}
           onChangeText={setQuery}
           placeholder="输入书名搜索"
+          placeholderTextColor={colors.textSubtle}
           onSubmitEditing={onSearch}
           returnKeyType="search"
           autoCorrect={false}
@@ -187,37 +189,39 @@ export default function AddBookScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  searchRow: { flexDirection: 'row', gap: 8 },
+  container: { flex: 1, padding: spacing.lg, backgroundColor: colors.bg },
+  searchRow: { flexDirection: 'row', gap: spacing.sm },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
     fontSize: 15,
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
   searchBtn: {
-    backgroundColor: '#208AEF',
-    borderRadius: 8,
-    paddingHorizontal: 16,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
     justifyContent: 'center',
   },
-  searchText: { color: '#fff', fontWeight: '600' },
+  searchText: { color: colors.primaryText, fontWeight: '600' },
   saveBtn: {
-    backgroundColor: '#208AEF',
-    borderRadius: 8,
-    paddingVertical: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
-  manualToggle: { marginTop: 12 },
-  manualToggleText: { color: '#208AEF', fontSize: 14 },
-  manualForm: { marginTop: 12, gap: 10 },
-  loading: { marginTop: 20 },
-  error: { marginTop: 12, color: '#c0392b', fontSize: 14 },
-  row: { flexDirection: 'row', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  manualToggle: { marginTop: spacing.md },
+  manualToggleText: { color: colors.accent, fontSize: 14 },
+  manualForm: { marginTop: spacing.md, gap: spacing.sm + 2 },
+  loading: { marginTop: spacing.xl },
+  error: { marginTop: spacing.md, color: colors.danger, fontSize: 14 },
+  row: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.sm + 2, borderBottomWidth: 1, borderBottomColor: colors.border },
   rowText: { flex: 1, justifyContent: 'center' },
-  rowTitle: { fontSize: 15, fontWeight: '500' },
-  rowAuthor: { fontSize: 13, color: '#666', marginTop: 2 },
+  rowTitle: { ...typography.body, fontSize: 15, fontWeight: '500', color: colors.text },
+  rowAuthor: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
 });

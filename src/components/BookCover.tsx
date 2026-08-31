@@ -1,7 +1,9 @@
 import { Image, type ImageSource } from 'expo-image';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { colors, radius } from '@/theme';
 
-/** 书籍封面，无封面时显示占位符；豆瓣图床需要带 Referer 防盗链头 */
+/** 书籍封面，无封面时显示 SF Symbol 占位符；豆瓣图床需要带 Referer 防盗链头 */
 export default function BookCover({ url, size = 56 }: { url?: string; size?: number }) {
   let source: ImageSource | undefined;
   if (url) {
@@ -15,7 +17,12 @@ export default function BookCover({ url, size = 56 }: { url?: string; size?: num
         <Image source={source} style={styles.img} contentFit="cover" transition={100} />
       ) : (
         <View style={styles.placeholder}>
-          <Text style={{ fontSize: size * 0.4 }}>📖</Text>
+          <SymbolView
+            name="book.closed"
+            size={Math.round(size * 0.45)}
+            tintColor={colors.textSubtle}
+            type="monochrome"
+          />
         </View>
       )}
     </View>
@@ -23,7 +30,7 @@ export default function BookCover({ url, size = 56 }: { url?: string; size?: num
 }
 
 const styles = StyleSheet.create({
-  box: { borderRadius: 12, overflow: 'hidden', backgroundColor: '#e8e8e8' },
+  box: { borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.surfaceMuted },
   img: { width: '100%', height: '100%' },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

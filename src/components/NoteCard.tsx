@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { ReadingEntry } from '@/types';
 import { formatProgress, segmentTags } from '@/utils';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography, shadow } from '@/theme';
 
 export interface NoteCardProps {
   entry: ReadingEntry;
@@ -163,7 +166,7 @@ export default function NoteCard({
             hitSlop={10}
             onPress={() => onOpenMenu(menuRef)}
             style={styles.menuBtn}>
-            <Text style={styles.menuIcon}>⋯</Text>
+            <SymbolView name="ellipsis" size={18} tintColor={colors.textSubtle} type="monochrome" />
           </Pressable>
         </View>
 
@@ -210,48 +213,42 @@ export default function NoteCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 18,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg + 2,
+    gap: spacing.sm + 2,
+    ...shadow.subtle,
   },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  headLeft: { flex: 1, marginRight: 8, gap: 4 },
-  title: { fontSize: 16, fontWeight: '600', color: '#208AEF' },
-  date: { fontSize: 12, color: '#999' },
-  menuBtn: { paddingHorizontal: 4, paddingVertical: 2 },
-  menuIcon: { fontSize: 20, color: '#888', lineHeight: 22 },
-  progress: { fontSize: 13, color: '#208AEF' },
-  comment: { fontSize: 15, lineHeight: 27, color: '#222' },
+  headLeft: { flex: 1, marginRight: spacing.sm, gap: spacing.xs },
+  title: { ...typography.bodyStrong, fontSize: 16, color: colors.accent },
+  date: { ...typography.micro, color: colors.textSubtle },
+  menuBtn: { paddingHorizontal: spacing.xs, paddingVertical: spacing.xs / 2 },
+  progress: { fontSize: 13, color: colors.accent },
+  comment: { fontSize: 15, lineHeight: 27, color: colors.text },
   tagInline: {
-    color: '#3a6e8e',
-    backgroundColor: '#e6eff6',
-    borderRadius: 999,
+    color: '#3B6B2E',
+    backgroundColor: '#EFF3E8',
+    borderRadius: radius.pill,
     paddingHorizontal: 7,
-    // 注意：paddingVertical 在 RN 内联 Text 上会让该行增高且仅作用于背景视觉，不会把相邻行撑开
     paddingTop: 2,
     paddingBottom: 2,
     marginHorizontal: 1,
     overflow: 'hidden',
   },
-  summary: { backgroundColor: '#f4f6f8', borderRadius: 10, padding: 12, gap: 4 },
-  summaryLabel: { fontSize: 12, color: '#888' },
+  summary: { backgroundColor: colors.surfaceMuted, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
+  summaryLabel: { ...typography.micro, color: colors.textSubtle, fontSize: 12 },
   summaryText: { fontSize: 14, lineHeight: 21 },
   footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
-  expandText: { fontSize: 14, color: '#208AEF', fontWeight: '500' },
+  expandText: { fontSize: 14, color: colors.accent, fontWeight: '500' },
   aiWrap: {},
   aiBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 9 },
-  aiAvailable: { backgroundColor: '#7CB342' },
-  aiUsed: { backgroundColor: '#dcdcdc' },
-  aiText: { fontSize: 12, color: '#fff', fontWeight: '700' },
+  aiAvailable: { backgroundColor: colors.primary },
+  aiUsed: { backgroundColor: colors.borderStrong },
+  aiText: { fontSize: 12, color: colors.primaryText, fontWeight: '700' },
   // 编辑态：白底，只改正文；输入层透明 + 高亮层内联标签
   editCommentWrap: { position: 'relative', minHeight: 100 },
-  editCommentText: { fontSize: 15, lineHeight: 27, color: '#222' },
+  editCommentText: { fontSize: 15, lineHeight: 27, color: colors.text },
   editCommentInput: {
     position: 'absolute',
     top: 0,
@@ -268,11 +265,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: 14,
+    gap: spacing.md + 2,
   },
-  cancelBtn: { paddingHorizontal: 8, paddingVertical: 6 },
-  cancelText: { fontSize: 15, color: '#888' },
-  saveBtn: { backgroundColor: '#7CB342', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 8 },
-  saveDisabled: { backgroundColor: '#c5c5c5' },
-  saveText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  cancelBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs + 2 },
+  cancelText: { ...typography.body, color: colors.textMuted },
+  saveBtn: { backgroundColor: colors.primary, borderRadius: radius.lg, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
+  saveDisabled: { backgroundColor: colors.borderStrong },
+  saveText: { color: colors.primaryText, fontWeight: '600', fontSize: 15 },
 });

@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { round2 } from '@/utils';
+import { colors, radius, spacing } from '@/theme';
 
 export interface BarDatum {
   label: string;
@@ -24,7 +25,7 @@ export default function BarChart({ data }: { data: BarDatum[] }) {
                   styles.bar,
                   {
                     width: `${(Math.abs(d.value) / max) * 100}%`,
-                    backgroundColor: d.value >= 0 ? '#7CB342' : '#e74c3c',
+                    backgroundColor: d.value >= 0 ? colors.primary : colors.danger,
                   },
                 ]}
               />
@@ -42,10 +43,10 @@ export default function BarChart({ data }: { data: BarDatum[] }) {
 
 const styles = StyleSheet.create({
   root: { gap: 10 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  label: { width: 90, fontSize: 13, color: '#333' },
-  track: { flex: 1, height: 14, backgroundColor: '#eee', borderRadius: 7, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  label: { width: 90, fontSize: 13, color: colors.text },
+  track: { flex: 1, height: 14, backgroundColor: colors.border, borderRadius: 7, overflow: 'hidden' },
   bar: { height: 14, borderRadius: 7 },
-  value: { width: 48, fontSize: 13, color: '#555', textAlign: 'right' },
-  empty: { color: '#999', fontSize: 13 },
+  value: { width: 48, fontSize: 13, color: colors.textMuted, textAlign: 'right', fontVariant: ['tabular-nums'] },
+  empty: { color: colors.textSubtle, fontSize: 13 },
 });

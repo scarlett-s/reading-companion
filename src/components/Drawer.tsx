@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
-  Pressable,
   Animated,
   PanResponder,
   StyleSheet,
@@ -10,10 +9,12 @@ import {
 } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import type { SFSymbol } from 'sf-symbols-typescript';
-import { useRouter, type Href } from 'expo-router';
+import { useRouter, usePathname, type Href } from 'expo-router';
 import { getAllBooks, getAllEntries } from '@/db';
 import { daysWithEntries } from '@/stats';
 import { todayString } from '@/utils';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography, shadow } from '@/theme';
 
 export interface DrawerItem {
   label: string;
@@ -54,7 +55,7 @@ const SF_SYMBOLS: Record<IconKind, SFSymbol> = {
   settings: 'gearshape',
 };
 
-function Icon({ kind, size = 24, color = '#222' }: { kind: IconKind; size?: number; color?: string }) {
+function Icon({ kind, size = 24, color = colors.text }: { kind: IconKind; size?: number; color?: string }) {
   return (
     <SymbolView
       name={SF_SYMBOLS[kind]}
@@ -165,6 +166,11 @@ export default function Drawer({
     setTimeout(() => router.push('/settings'), 200);
   }
 
+  // 用 usePathname 拿到当前路径（在 Drawer 函数体内调用）
+  // 提取为内部 hook 以保持 JSX 内简洁
+  const pathname = usePathname();
+  const activePath = pathname ?? '';
+
   // 侧边栏打开时，左滑关闭手势
   const closePan = useRef(
     PanResponder.create({
@@ -184,6 +190,8 @@ export default function Drawer({
   ).current;
 
   if (!open) return null;
+
+  const isActive = (path: Href) => activePath === String(path) || activePath.startsWith(String(path) + '/');
 
   return (
     <View style={styles.root} pointerEvents="auto">
@@ -205,7 +213,7 @@ export default function Drawer({
         <View style={styles.headerRow}>
           <Text style={styles.username}>我</Text>
           <Pressable onPress={goSettings} hitSlop={10}>
-            <Icon kind="settings" size={22} color="#666" />
+            <Icon kind="settings" size={22} color={colors.textMuted} />
           </Pressable>
         </View>
 
@@ -235,10 +243,16 @@ export default function Drawer({
           {items.map((item) => (
             <Pressable
               key={String(item.path)}
-              style={styles.menuItem}
+              style={[styles.menuItem, isActive(item.path) && styles.menuItemActive]}
               onPress={() => goTo(item)}>
-              <Icon kind={item.icon} size={20} color="#444" />
-              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Icon
+                kind={item.icon}
+                size={20}
+                color={isActive(item.path) ? colors.text : colors.textMuted}
+              />
+              <Text style={[styles.menuLabel, isActive(item.path) && styles.menuLabelActive]}>
+                {item.label}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -258,15 +272,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlay,
   },
   panel: {
     position: 'absolute',
     left: 0, top: 0, bottom: 0,
     width: PANEL_WIDTH,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     paddingTop: 56,
     paddingHorizontal: SIDE_MARGIN,
+    ...shadow.floating,
   },
 
   // Row 1
@@ -276,7 +291,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  username: { fontSize: 22, fontWeight: '700', color: '#1a1a1a' },
+  username: { ...typography.title, color: colors.text },
 
   // Row 2
   statsRow: {
@@ -287,18 +302,18 @@ const styles = StyleSheet.create({
   statCell: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
   },
   statValue: {
+    ...typography.title,
     fontSize: 32,
-    fontWeight: '700',
-    color: '#1a1a1a',
     lineHeight: 36,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
   statLabel: {
-    fontSize: 12,
-    color: '#888',
-    lineHeight: 16,
+    ...typography.micro,
+    color: colors.textSubtle,
   },
 
   // Row 3
@@ -313,14 +328,23 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 0,
-    gap: 14,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    marginHorizontal: -spacing.sm,
+    borderRadius: radius.md,
+    gap: spacing.md + 2,
+  },
+  menuItemActive: {
+    backgroundColor: colors.bg,
   },
   menuLabel: {
-    fontSize: 15,
-    color: '#222',
+    ...typography.body,
     fontWeight: '500',
+    color: colors.textMuted,
+  },
+  menuLabelActive: {
+    color: colors.text,
+    fontWeight: '600',
   },
 });
 

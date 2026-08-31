@@ -1,8 +1,10 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import type { SFSymbol } from 'sf-symbols-typescript';
 import { openDrawer } from '@/drawerControl';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography } from '@/theme';
 
 /** 设置页菜单项类型 */
 interface MenuItem {
@@ -32,13 +34,13 @@ export default function SettingsScreen() {
       {/* 顶部 nav bar：左 = 呼出侧边栏 | 中 = 设 置 | 右 = ⋯ */}
       <View style={styles.navBar}>
         <Pressable onPress={() => openDrawer()} hitSlop={8} style={styles.navBtn}>
-          <Text style={styles.navIcon}>‹</Text>
+          <SymbolView name="line.3.horizontal" size={22} tintColor={colors.text} type="monochrome" />
         </Pressable>
         <View style={styles.navTitleLayer} pointerEvents="none">
           <Text style={styles.navTitle}>设  置</Text>
         </View>
         <Pressable hitSlop={8} style={styles.navBtn}>
-          <Text style={styles.navIcon}>⋯</Text>
+          <SymbolView name="ellipsis" size={22} tintColor={colors.text} type="monochrome" />
         </Pressable>
       </View>
 
@@ -48,8 +50,11 @@ export default function SettingsScreen() {
           {items.map((item, i) => (
             <View key={item.label}>
               <Pressable style={styles.row} onPress={item.to}>
-                <SymbolView name={item.symbol} size={22} tintColor="#1a1a1a" type="monochrome" />
+                <SymbolView name={item.symbol} size={22} tintColor={colors.text} type="monochrome" />
                 <Text style={styles.rowLabel}>{item.label}</Text>
+                <View style={styles.chevron}>
+                  <SymbolView name="chevron.right" size={14} tintColor={colors.textSubtle} type="monochrome" />
+                </View>
               </Pressable>
               {i < items.length - 1 && <View style={styles.divider} />}
             </View>
@@ -61,7 +66,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F3F5F2' },
+  root: { flex: 1, backgroundColor: colors.bg },
 
   // Nav bar
   navBar: {
@@ -69,10 +74,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     height: 44,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm + 2,
   },
-  navBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  navIcon: { fontSize: 26, color: '#1a1a1a', lineHeight: 28 },
+  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   navTitleLayer: {
     position: 'absolute',
     left: 0,
@@ -82,37 +86,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navTitle: {
-    color: '#1a1a1a',
+    color: colors.text,
     fontSize: 16,
     fontWeight: '600',
-    letterSpacing: 4,
   },
 
   // Body
   body: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md + 2,
+    paddingHorizontal: spacing.lg,
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
-    gap: 14,
+    paddingVertical: spacing.lg + 2,
+    gap: spacing.md + 2,
   },
   rowLabel: {
     fontSize: 16,
-    color: '#1a1a1a',
+    color: colors.text,
+    flex: 1,
   },
+  chevron: { marginLeft: 'auto' },
   divider: {
     height: 1,
-    backgroundColor: '#E6E6E6',
+    backgroundColor: colors.border,
     marginLeft: 36, // 跳过 icon + gap
   },
 });

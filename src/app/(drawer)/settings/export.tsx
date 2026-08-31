@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { useRouter } from 'expo-router';
 import { getAllBooks, getAllEntries } from '@/db';
 import { allBooksToMarkdown, markdownToPlainText, markdownToHtml } from '@/export';
 import { Book, ReadingEntry } from '@/types';
 import ExportButtons from '@/components/ExportButtons';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, typography } from '@/theme';
 
 export default function ExportScreen() {
   const router = useRouter();
@@ -25,7 +28,7 @@ export default function ExportScreen() {
       {/* 顶部 nav bar：< | 导出笔记 | 占位 */}
       <View style={styles.navBar}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={styles.navBtn}>
-          <Text style={styles.navIcon}>‹</Text>
+          <SymbolView name="chevron.left" size={24} tintColor={colors.text} type="monochrome" />
         </Pressable>
         <View style={styles.navTitleLayer} pointerEvents="none">
           <Text style={styles.navTitle}>导出笔记</Text>
@@ -50,7 +53,8 @@ export default function ExportScreen() {
           <>
             <Text style={styles.sectionTitle}>开发者</Text>
             <Pressable style={styles.diagBtn} onPress={() => router.push('/diagnostics')}>
-              <Text style={styles.diagText}>🔬 诊断 / 测试（Embedding & RAG）</Text>
+              <SymbolView name="stethoscope" size={16} tintColor={colors.primaryText} type="monochrome" />
+              <Text style={styles.diagText}>诊断 / 测试（Embedding & RAG）</Text>
             </Pressable>
           </>
         )}
@@ -60,7 +64,7 @@ export default function ExportScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F3F5F2' },
+  root: { flex: 1, backgroundColor: colors.bg },
 
   // Nav bar
   navBar: {
@@ -68,10 +72,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     height: 44,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.sm + 2,
   },
-  navBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  navIcon: { fontSize: 26, color: '#1a1a1a', lineHeight: 28 },
+  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   navTitleLayer: {
     position: 'absolute',
     left: 0,
@@ -81,21 +84,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navTitle: {
-    color: '#1a1a1a',
+    color: colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
 
   // Body
   scroll: { flex: 1 },
-  content: { padding: 16, gap: 16 },
-  hint: { fontSize: 13, color: '#666', lineHeight: 19 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 8 },
+  content: { padding: spacing.lg, gap: spacing.lg },
+  hint: { fontSize: 13, color: colors.textMuted, lineHeight: 19 },
+  sectionTitle: { ...typography.subheading, marginTop: spacing.sm },
   diagBtn: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
-    paddingVertical: 13,
+    backgroundColor: colors.text,
+    borderRadius: 12,
+    paddingVertical: spacing.md + 1,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
-  diagText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  diagText: { color: colors.primaryText, fontSize: 14, fontWeight: '600' },
 });

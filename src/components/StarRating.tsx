@@ -1,11 +1,13 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Pressable } from '@/components/Pressable';
+import { colors } from '@/theme';
 
 export default function StarRating({
   value,
   onChange,
   size = 30,
-  activeColor = '#FFC107',
-  inactiveColor = '#ddd',
+  activeColor = colors.gold,
+  inactiveColor = colors.borderStrong,
 }: {
   value: number;
   onChange?: (v: number) => void;

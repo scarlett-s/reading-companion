@@ -1,4 +1,6 @@
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography } from '@/theme';
 
 interface InsightTabsProps {
   activeTab: 'notes' | 'reflections';
@@ -41,7 +43,7 @@ export default function InsightTabs({
         disabled={insightDisabled || loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" size="small" />
+          <ActivityIndicator color={colors.primaryText} size="small" />
         ) : (
           <Text style={styles.insightBtnText}>新 AI 洞察</Text>
         )}
@@ -78,29 +80,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  tabs: { flexDirection: 'row', gap: 24, alignItems: 'flex-end' },
-  tabText: { color: '#9C9C9C', fontSize: 16, fontWeight: '400', lineHeight: 23 },
-  tabTextActive: { color: '#1a1a1a', fontWeight: '600' },
-  tabCount: { color: '#9C9C9C', fontSize: 14, fontWeight: '400' },
+  tabs: { flexDirection: 'row', gap: spacing.xxl, alignItems: 'flex-end' },
+  tabText: { color: colors.textSubtle, fontSize: 16, lineHeight: 23 },
+  tabTextActive: { color: colors.text, fontWeight: '600' },
+  tabCount: { color: colors.textSubtle, fontSize: 14 },
   underline: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: -4,
     height: 2,
-    backgroundColor: '#7CB342',
+    backgroundColor: colors.primary,
     borderRadius: 1,
-    display: 'none',
   },
   insightBtn: {
-    backgroundColor: '#1a1a1a',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
+    backgroundColor: colors.text,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.pill,
   },
   insightBtnDisabled: { opacity: 0.4 },
-  insightBtnText: { color: '#fff', fontSize: 16, fontWeight: '600', lineHeight: 22 },
+  insightBtnText: { color: colors.primaryText, ...typography.bodyStrong, fontSize: 16, lineHeight: 22 },
 });

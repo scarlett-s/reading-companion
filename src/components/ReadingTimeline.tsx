@@ -1,5 +1,7 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { ReadingEntry } from '@/types';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography, shadow } from '@/theme';
 
 interface ReadingTimelineProps {
   entries: ReadingEntry[];
@@ -83,33 +85,29 @@ function TimelineNoteCard({
 
 const styles = StyleSheet.create({
   timeline: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxxl,
   },
   dateGroup: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   dateHeader: {
-    color: '#9C9C9C',
-    fontSize: 13,
+    ...typography.caption,
+    color: colors.textSubtle,
     fontWeight: '400',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   cardList: {
-    gap: 10,
+    gap: spacing.sm + 2,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-    gap: 8,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md + 2,
+    ...shadow.subtle,
+    gap: spacing.sm,
   },
   cardTop: {
     flexDirection: 'row',
@@ -117,16 +115,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardProgress: {
-    color: '#7CB342',
+    color: colors.primary,
     fontSize: 11,
     fontWeight: '500',
   },
   cardDate: {
-    color: '#1a1a1a',
+    ...typography.micro,
     fontSize: 11,
+    color: colors.text,
   },
   cardBody: {
-    color: '#222',
+    ...typography.caption,
+    color: colors.text,
     fontSize: 13,
     lineHeight: 19,
   },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   expandText: {
-    color: '#7CB342',
+    color: colors.primary,
     fontSize: 11,
     fontWeight: '500',
   },

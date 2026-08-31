@@ -1,5 +1,7 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { shareText } from '@/share';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography } from '@/theme';
 
 export type ExportFormat = 'txt' | 'md' | 'html';
 
@@ -36,14 +38,14 @@ export default function ExportButtons({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 8 },
+  row: { flexDirection: 'row', gap: spacing.sm },
   btn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#208AEF',
-    borderRadius: 8,
-    paddingVertical: 10,
+    borderColor: colors.accent,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm + 2,
     alignItems: 'center',
   },
-  text: { color: '#208AEF', fontWeight: '600', fontSize: 14 },
+  text: { color: colors.accent, ...typography.bodyStrong, fontSize: 14 },
 });

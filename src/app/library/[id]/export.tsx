@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import {
   View,
   Text,
-  Pressable,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
@@ -13,6 +12,8 @@ import { getBook, getEntriesByBook } from '@/db';
 import { bookToMarkdown, markdownToPlainText, markdownToHtml } from '@/export';
 import { shareText } from '@/share';
 import { Book, ReadingEntry } from '@/types';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography } from '@/theme';
 
 type Format = 'md' | 'txt' | 'html';
 
@@ -88,14 +89,16 @@ export default function ExportBookScreen() {
       </Section>
 
       <Section title="导出格式">
-        {(['md', 'txt', 'html'] as Format[]).map((f) => (
-          <RadioRow
-            key={f}
-            selected={format === f}
-            onSelect={() => setFormat(f)}
-            label={FORMAT_LABEL[f]}
-            sub={f === 'md' ? '适合再编辑、复制到笔记软件' : f === 'txt' ? '纯文本，最通用' : '可在浏览器打开，单文件'}
-          />
+        {(['md', 'txt', 'html'] as Format[]).map((f, i) => (
+          <View key={f}>
+            <RadioRow
+              selected={format === f}
+              onSelect={() => setFormat(f)}
+              label={FORMAT_LABEL[f]}
+              sub={f === 'md' ? '适合再编辑、复制到笔记软件' : f === 'txt' ? '纯文本，最通用' : '可在浏览器打开，单文件'}
+            />
+            {i < 2 && <View style={styles.rowDivider} />}
+          </View>
         ))}
       </Section>
 
@@ -104,7 +107,7 @@ export default function ExportBookScreen() {
         onPress={doExport}
         disabled={busy}
         hitSlop={6}>
-        {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.exportBtnText}>导出并分享</Text>}
+        {busy ? <ActivityIndicator color={colors.primaryText} /> : <Text style={styles.exportBtnText}>导出并分享</Text>}
       </Pressable>
       <Text style={styles.hint}>导出后会触发系统分享面板，可保存到「文件」/ 复制内容 / 发到其他 App。</Text>
     </ScrollView>
@@ -145,26 +148,27 @@ function RadioRow({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F5F2' },
-  content: { padding: 20, gap: 20 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing.xl, gap: spacing.xl },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  bookTitle: { fontSize: 20, fontWeight: '700', color: '#222' },
-  meta: { color: '#888', fontSize: 13, marginTop: -8 },
+  bookTitle: { ...typography.title, fontSize: 20, color: colors.text },
+  meta: { color: colors.textSubtle, fontSize: 13, marginTop: -spacing.lg },
 
-  section: { gap: 10 },
-  sectionTitle: { fontSize: 14, color: '#666', fontWeight: '600' },
-  group: { backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden' },
+  section: { gap: spacing.md - 2 },
+  sectionTitle: { ...typography.caption, fontSize: 13, color: colors.textMuted, fontWeight: '600' },
+  group: { backgroundColor: colors.surface, borderRadius: radius.md + 2, overflow: 'hidden' },
 
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#bbb', alignItems: 'center', justifyContent: 'center' },
-  radioActive: { borderColor: '#7CB342' },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#7CB342' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.lg - 2, paddingHorizontal: spacing.lg, gap: spacing.md },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center' },
+  radioActive: { borderColor: colors.primary },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
   rowText: { flex: 1 },
-  rowLabel: { fontSize: 15, color: '#222', fontWeight: '500' },
-  rowSub: { fontSize: 12, color: '#888', marginTop: 2 },
+  rowLabel: { fontSize: 15, color: colors.text, fontWeight: '500' },
+  rowSub: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
+  rowDivider: { height: 1, backgroundColor: colors.border, marginLeft: 50 },
 
-  exportBtn: { backgroundColor: '#7CB342', borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
+  exportBtn: { backgroundColor: colors.primary, borderRadius: radius.md + 2, paddingVertical: spacing.lg, alignItems: 'center' },
   exportBtnDisabled: { opacity: 0.5 },
-  exportBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  hint: { color: '#999', fontSize: 12, textAlign: 'center', lineHeight: 18 },
+  exportBtnText: { color: colors.primaryText, fontSize: 16, fontWeight: '700' },
+  hint: { color: colors.textSubtle, fontSize: 12, textAlign: 'center', lineHeight: 18 },
 });

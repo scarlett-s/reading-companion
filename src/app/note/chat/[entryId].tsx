@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
@@ -11,11 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getEntry, getBook, getSettings, updateEntryDiscussion } from '@/db';
 import { generateSocraticQuestion, generateSocraticSummary, isSocraticEnd, detectStopIntent, farewellFor } from '@/ai';
 import { retrieveRelatedNotes } from '@/embedding';
 import { AISettings, DiscussionTurn, ReadingEntry } from '@/types';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography } from '@/theme';
 
 const MAX_ROUNDS = 10;
 
@@ -142,7 +144,8 @@ export default function ChatScreen() {
   if (saved !== null) {
     return (
       <View style={styles.center}>
-        <Text style={styles.doneTitle}>已保存 ✓</Text>
+        <Text style={styles.doneTitle}>已保存</Text>
+        <SymbolView name="checkmark.circle.fill" size={48} tintColor={colors.primary} type="monochrome" />
         {saved.length > 0 && (
           <View style={styles.points}>
             <Text style={styles.pointsTitle}>AI 总结</Text>
@@ -198,14 +201,17 @@ export default function ChatScreen() {
         {saving && <Text style={styles.saving}>正在总结并保存…</Text>}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: 16 + kbHeight }]}>
+      <View style={[styles.footer, { paddingBottom: spacing.lg + kbHeight }]}>
         <TextInput
           style={styles.answerInput}
           value={answer}
           onChangeText={setAnswer}
           placeholder="简单回答…"
+          placeholderTextColor={colors.textSubtle}
           multiline
           editable={!loading && !saving}
+          selectionColor={colors.accent}
+          cursorColor={colors.accent}
         />
         <Pressable
           style={[styles.btn, (loading || saving || !answer.trim()) && styles.btnDisabled]}
@@ -217,7 +223,7 @@ export default function ChatScreen() {
           <Text style={styles.roundInfo}>
             第 {Math.min(roundCount + 1, MAX_ROUNDS)} / {MAX_ROUNDS} 轮
           </Text>
-          <Pressable onPress={() => finish()} disabled={saving || loading}>
+          <Pressable onPress={() => finish()} disabled={saving || loading} hitSlop={6}>
             <Text style={styles.finishText}>结束并保存</Text>
           </Pressable>
         </View>
@@ -227,39 +233,41 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl, gap: spacing.lg },
   scroll: { flex: 1 },
-  content: { padding: 16, gap: 12 },
-  commentBox: { backgroundColor: '#f4f6f8', borderRadius: 10, padding: 12 },
-  commentLabel: { fontSize: 12, color: '#888', marginBottom: 4 },
-  commentText: { fontSize: 14, lineHeight: 20 },
-  bubbleAI: { alignSelf: 'flex-start', backgroundColor: '#f0f0f0', borderRadius: 12, padding: 10, maxWidth: '85%' },
-  bubbleUser: { alignSelf: 'flex-end', backgroundColor: '#208AEF', borderRadius: 12, padding: 10, maxWidth: '85%' },
-  bubbleTextAI: { fontSize: 14, lineHeight: 20, color: '#222' },
-  bubbleTextUser: { fontSize: 14, lineHeight: 20, color: '#fff' },
-  loading: { marginVertical: 12 },
-  saving: { color: '#888', fontSize: 13 },
-  errorText: { color: '#c0392b', fontSize: 14, lineHeight: 20 },
-  errorHint: { color: '#888', fontSize: 13, textAlign: 'center' },
-  doneTitle: { fontSize: 20, fontWeight: '700' },
-  points: { width: '100%', backgroundColor: '#f4f6f8', borderRadius: 10, padding: 14, gap: 6 },
-  pointsTitle: { fontSize: 13, color: '#888', marginBottom: 2 },
-  point: { fontSize: 14, lineHeight: 20 },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#f0f0f0', gap: 10 },
+  content: { padding: spacing.lg, gap: spacing.md },
+  commentBox: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md + 2 },
+  commentLabel: { ...typography.caption, fontSize: 12, color: colors.textSubtle, marginBottom: spacing.xs },
+  commentText: { fontSize: 14, lineHeight: 20, color: colors.text },
+  bubbleAI: { alignSelf: 'flex-start', backgroundColor: colors.surfaceMuted, borderRadius: radius.md, padding: spacing.md + 2, maxWidth: '85%' },
+  bubbleUser: { alignSelf: 'flex-end', backgroundColor: colors.accent, borderRadius: radius.md, padding: spacing.md + 2, maxWidth: '85%' },
+  bubbleTextAI: { fontSize: 14, lineHeight: 20, color: colors.text },
+  bubbleTextUser: { fontSize: 14, lineHeight: 20, color: colors.primaryText },
+  loading: { marginVertical: spacing.md },
+  saving: { color: colors.textSubtle, fontSize: 13 },
+  errorText: { color: colors.danger, fontSize: 14, lineHeight: 20 },
+  errorHint: { color: colors.textSubtle, fontSize: 13, textAlign: 'center' },
+  doneTitle: { fontSize: 20, fontWeight: '700', color: colors.text },
+  points: { width: '100%', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.lg - 2, gap: spacing.xs + 2 },
+  pointsTitle: { fontSize: 13, color: colors.textSubtle, marginBottom: 2 },
+  point: { fontSize: 14, lineHeight: 20, color: colors.text },
+  footer: { padding: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.md - 2 },
   answerInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md - 2,
     fontSize: 15,
     minHeight: 60,
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
-  btn: { backgroundColor: '#208AEF', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  btn: { backgroundColor: colors.accent, borderRadius: radius.md, paddingVertical: spacing.md - 1, alignItems: 'center' },
   btnDisabled: { opacity: 0.4 },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  btnText: { color: colors.primaryText, fontWeight: '600', fontSize: 15 },
   footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  roundInfo: { fontSize: 13, color: '#888' },
-  finishText: { fontSize: 14, color: '#8e44ad', fontWeight: '600' },
+  roundInfo: { fontSize: 13, color: colors.textSubtle },
+  finishText: { fontSize: 14, color: colors.accent, fontWeight: '600' },
 });

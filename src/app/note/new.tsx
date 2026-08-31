@@ -3,22 +3,23 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   ScrollView,
   StyleSheet,
   InputAccessoryView,
   Platform,
   Keyboard,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { getAllBooks, addEntry, updateEntry, getEntry, getBook, generateId } from '@/db';
 import { onEntrySaved } from '@/embedding';
 import { todayString } from '@/utils';
 import { Book, ReadingEntry } from '@/types';
 import { Icon } from '@/components/Icon';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography, shadow } from '@/theme';
 
 const SUBMIT_ID = 'note-new-submit';
-const PAGE_BG = '#F3F5F2';
 const CARD_RADIUS = 16;
 
 type Unit = 'page' | 'percent';
@@ -133,15 +134,16 @@ export default function NewNoteScreen() {
     <View style={styles.page}>
       <View style={styles.topbar}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
-          <Text style={styles.backIcon}>‹</Text>
+          <SymbolView name="chevron.left" size={26} tintColor={colors.text} type="monochrome" />
         </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable
           onPress={submit}
           disabled={!commentFilled || saving}
           hitSlop={8}
+          scale={0.92}
           style={[styles.checkBtn, (!commentFilled || saving) && styles.checkDisabled]}>
-          <Icon name="check" size={20} color="#fff" />
+          <SymbolView name="checkmark" size={20} tintColor={colors.primaryText} type="monochrome" />
         </Pressable>
       </View>
 
@@ -158,7 +160,7 @@ export default function NewNoteScreen() {
               setSelectedBook(null);
             }}
             placeholder="书名"
-            placeholderTextColor="#888"
+            placeholderTextColor={colors.textSubtle}
             autoCorrect={false}
           />
           {!selectedBook && bookQuery.trim().length > 0 && (
@@ -185,14 +187,14 @@ export default function NewNoteScreen() {
               value={progressValue}
               onChangeText={setProgressValue}
               placeholder="阅读进度"
-              placeholderTextColor="#888"
+              placeholderTextColor={colors.textSubtle}
               keyboardType="number-pad"
               inputAccessoryViewID={Platform.OS === 'ios' ? SUBMIT_ID : undefined}
             />
             <View style={styles.progressDivider} />
             <Pressable style={styles.unitToggle} onPress={() => setUnitMenuOpen((v) => !v)} hitSlop={6}>
               <Text style={styles.unitText}>{unit === 'page' ? '页' : '%'}</Text>
-              <Text style={styles.unitCaret}>⌄</Text>
+              <SymbolView name="chevron.down" size={12} tintColor={colors.textSubtle} type="monochrome" />
             </Pressable>
           </View>
           {unitMenuOpen && (
@@ -219,10 +221,12 @@ export default function NewNoteScreen() {
           value={comment}
           onChangeText={setComment}
           placeholder="现在的想法"
-          placeholderTextColor="#888"
+          placeholderTextColor={colors.textSubtle}
           multiline
           textAlignVertical="top"
           inputAccessoryViewID={Platform.OS === 'ios' ? SUBMIT_ID : undefined}
+          selectionColor={colors.accent}
+          cursorColor={colors.accent}
         />
       </ScrollView>
 
@@ -232,111 +236,111 @@ export default function NewNoteScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: PAGE_BG },
+  page: { flex: 1, backgroundColor: colors.bg },
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
     paddingTop: 56,
-    paddingBottom: 6,
+    paddingBottom: spacing.xs + 2,
   },
-  backBtn: { paddingHorizontal: 4, paddingVertical: 4 },
-  backIcon: { fontSize: 28, color: '#222', lineHeight: 28 },
+  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   checkBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#7CB342',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkDisabled: { backgroundColor: '#d0d0d0' },
+  checkDisabled: { backgroundColor: colors.borderStrong },
   scroll: { flex: 1 },
-  content: { padding: 16, gap: 28, flexGrow: 1, paddingBottom: 48 },
+  content: { padding: spacing.lg, gap: spacing.xxl + 4, flexGrow: 1, paddingBottom: spacing.xxxxl + 8 },
   field: { position: 'relative' },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: spacing.lg + 2,
+    paddingVertical: spacing.md + 2,
     fontSize: 15,
-    color: '#222',
+    color: colors.text,
   },
   dropdown: {
     position: 'absolute',
     top: 60,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: colors.border,
     zIndex: 10,
+    ...shadow.card,
   },
   dropdownItem: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.lg + 2,
+    paddingVertical: spacing.sm + 2,
     borderBottomWidth: 1,
-    borderBottomColor: '#f5f5f5',
+    borderBottomColor: colors.border,
   },
-  dropdownTitle: { fontSize: 15, fontWeight: '500' },
-  dropdownAuthor: { fontSize: 12, color: '#888', marginTop: 1 },
-  addNew: { fontSize: 14, color: '#208AEF', fontWeight: '600' },
+  dropdownTitle: { ...typography.body, fontSize: 15, fontWeight: '500', color: colors.text },
+  dropdownAuthor: { fontSize: 12, color: colors.textSubtle, marginTop: 1 },
+  addNew: { ...typography.body, fontSize: 14, color: colors.accent, fontWeight: '600' },
   progressPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    paddingLeft: 18,
+    paddingLeft: spacing.lg + 2,
   },
-  progressInput: { flex: 1, paddingVertical: 14, fontSize: 15, color: '#222' },
-  progressDivider: { width: 1, height: 20, backgroundColor: '#e0e0e0', marginHorizontal: 12 },
+  progressInput: { flex: 1, paddingVertical: spacing.md + 2, fontSize: 15, color: colors.text },
+  progressDivider: { width: 1, height: 20, backgroundColor: colors.borderStrong, marginHorizontal: spacing.md },
   unitToggle: {
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.md + 2,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
   },
-  unitText: { fontSize: 15, color: '#222' },
-  unitCaret: { fontSize: 14, color: '#888', marginTop: -2 },
+  unitText: { ...typography.body, fontSize: 15, color: colors.text },
   unitMenu: {
     position: 'absolute',
     top: 60,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: colors.border,
     overflow: 'hidden',
     minWidth: 100,
     zIndex: 10,
+    ...shadow.card,
   },
-  unitItem: { paddingHorizontal: 18, paddingVertical: 12 },
-  unitItemActive: { backgroundColor: '#f4f6f8' },
-  unitItemText: { fontSize: 15, color: '#222' },
-  unitItemTextActive: { color: '#7CB342', fontWeight: '600' },
+  unitItem: { paddingHorizontal: spacing.lg + 2, paddingVertical: spacing.md },
+  unitItemActive: { backgroundColor: colors.surfaceMuted },
+  unitItemText: { ...typography.body, fontSize: 15, color: colors.text },
+  unitItemTextActive: { color: colors.primary, fontWeight: '600' },
   commentInput: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: CARD_RADIUS,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.lg + 2,
+    paddingVertical: spacing.lg,
     fontSize: 16,
-    color: '#222',
+    color: colors.text,
     flex: 1,
   },
   accessory: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f7f7f7',
+    backgroundColor: colors.surfaceMuted,
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.sm,
   },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: spacing.lg,
   },
 });

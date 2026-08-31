@@ -3,16 +3,18 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   ScrollView,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getAllBooks, getRecentBooks } from '@/db';
 import { Book } from '@/types';
 import BookCover from '@/components/BookCover';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography } from '@/theme';
 
 export default function LibraryScreen() {
   const router = useRouter();
@@ -61,7 +63,7 @@ export default function LibraryScreen() {
           />
           {searching && (
             <Pressable onPress={() => setQuery('')} hitSlop={8} style={styles.clearBtn}>
-              <Text style={styles.clearText}>×</Text>
+              <SymbolView name="xmark" size={16} tintColor={colors.textMuted} type="monochrome" />
             </Pressable>
           )}
         </View>
@@ -111,7 +113,7 @@ export default function LibraryScreen() {
             <View style={styles.grid}>
               <Pressable style={styles.gridItem} onPress={() => router.push('/library/add')}>
                 <View style={styles.addCard}>
-                  <Text style={styles.addText}>＋</Text>
+                  <SymbolView name="plus" size={28} tintColor={colors.textSubtle} type="monochrome" />
                 </View>
                 <Text style={styles.gridTitle} numberOfLines={1}>
                   添加图书
@@ -140,54 +142,58 @@ export default function LibraryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.bg },
   scroll: { flex: 1 },
-  content: { padding: 16 },
-  searchRow: { position: 'relative', marginBottom: 16 },
+  content: { padding: spacing.lg },
+  searchRow: { position: 'relative', marginBottom: spacing.lg },
   search: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
     fontSize: 15,
-    paddingRight: 36,
+    color: colors.text,
+    backgroundColor: colors.surface,
+    paddingRight: 44,
   },
   clearBtn: {
     position: 'absolute',
-    right: 8,
+    right: spacing.sm,
     top: 0,
     bottom: 0,
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  clearText: { fontSize: 20, color: '#999' },
-  dropdown: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#eee',
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  dropdownItem: { paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
-  dropdownTitle: { fontSize: 15, fontWeight: '500', color: '#222' },
-  dropdownSub: { fontSize: 12, color: '#888', marginTop: 2 },
-  dropdownEmpty: { color: '#999', fontSize: 13, padding: 16, textAlign: 'center' },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12, marginTop: 8 },
-  sectionTitleSpaced: { marginTop: 32 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 16 },
-  gridItem: { width: '33.33%', alignItems: 'center', gap: 6 },
-  gridTitle: { fontSize: 13, color: '#333' },
-  gridPublisher: { fontSize: 11, color: '#999' },
-  addCard: {
-    width: 88,
-    height: 123,
-    borderRadius: 4,
-    backgroundColor: '#eee',
+    width: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addText: { fontSize: 32, color: '#999' },
-  empty: { color: '#999', fontSize: 14, marginTop: 8 },
+  dropdown: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md - 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+  },
+  dropdownItem: { paddingHorizontal: spacing.md + 2, paddingVertical: spacing.md - 1, borderBottomWidth: 1, borderBottomColor: colors.border },
+  dropdownTitle: { ...typography.body, fontSize: 15, fontWeight: '500', color: colors.text },
+  dropdownSub: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
+  dropdownEmpty: { color: colors.textSubtle, fontSize: 13, padding: spacing.lg, textAlign: 'center' },
+  sectionTitle: { ...typography.subheading, marginBottom: spacing.md, marginTop: spacing.sm },
+  sectionTitleSpaced: { marginTop: spacing.xxxl },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.lg },
+  gridItem: { width: '33.33%', alignItems: 'center', gap: spacing.xs + 2 },
+  gridTitle: { ...typography.caption, fontSize: 13, color: colors.text, textAlign: 'center' },
+  gridPublisher: { ...typography.micro, fontSize: 11, color: colors.textSubtle, textAlign: 'center' },
+  addCard: {
+    width: 88,
+    height: 123,
+    borderRadius: radius.sm - 4,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  empty: { color: colors.textSubtle, fontSize: 14, marginTop: spacing.sm },
 });

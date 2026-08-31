@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Modal, Alert } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -23,6 +24,8 @@ import BookStats from '@/components/BookStats';
 import InsightTabs from '@/components/InsightTabs';
 import ReadingTimeline from '@/components/ReadingTimeline';
 import AIInsightCard from '@/components/AIInsightCard';
+import { Pressable } from '@/components/Pressable';
+import { colors, spacing, radius, typography, shadow } from '@/theme';
 
 type Tab = 'notes' | 'reflections';
 
@@ -153,15 +156,15 @@ export default function BookDetailScreen() {
         {/* 导航栏：back | 占位 | ♡ | ⋯ */}
         <View style={styles.navBar}>
           <Pressable onPress={() => router.back()} hitSlop={8} style={styles.navBtn}>
-            <Text style={styles.navIcon}>‹</Text>
+            <SymbolView name="chevron.left" size={24} tintColor={colors.text} type="monochrome" />
           </Pressable>
           <View style={styles.navSpacer} />
           <View style={styles.navRight}>
             <Pressable onPress={() => {}} hitSlop={8} style={styles.navBtn}>
-              <Text style={styles.navIcon}>♡</Text>
+              <SymbolView name="heart" size={20} tintColor={colors.text} type="monochrome" />
             </Pressable>
             <Pressable onPress={() => setMenuOpen(true)} hitSlop={8} style={styles.navBtn}>
-              <Text style={styles.navIcon}>⋯</Text>
+              <SymbolView name="ellipsis" size={20} tintColor={colors.text} type="monochrome" />
             </Pressable>
           </View>
         </View>
@@ -186,7 +189,7 @@ export default function BookDetailScreen() {
               <View style={styles.statusPill}>
                 <Text style={styles.statusPillText}>{statusLabel}</Text>
               </View>
-              <StarRating value={book.rating ?? 0} onChange={rate} size={16} activeColor="#F5B400" inactiveColor="#D8D5CF" />
+              <StarRating value={book.rating ?? 0} onChange={rate} size={16} activeColor={colors.gold} inactiveColor={colors.borderStrong} />
             </View>
           </View>
 
@@ -252,23 +255,22 @@ export default function BookDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: colors.surface },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // Hero
-  hero: { backgroundColor: '#FFFFFF' },
+  hero: { backgroundColor: colors.surface },
 
   // Nav bar: back | 占位 | fav | more
   navBar: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 44,
-    paddingHorizontal: HERO_H_PAD,
+    paddingHorizontal: spacing.sm,
   },
-  navBtn: { padding: 4 },
-  navIcon: { color: '#1a1a1a', fontSize: 26, fontWeight: '400', lineHeight: 28 },
+  navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   navSpacer: { flex: 1 },
-  navRight: { flexDirection: 'row', gap: 14 },
+  navRight: { flexDirection: 'row', gap: spacing.sm + 2 },
   // 屏幕标题 — 绝对居中于整个页面宽度
   navTitleLayer: {
     position: 'absolute',
@@ -279,48 +281,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navTitle: {
-    color: '#1a1a1a',
+    color: colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
 
   // Book overview
   bookOverview: {
-    paddingHorizontal: HERO_H_PAD,
-    paddingTop: 16,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: COVER_INFO_GAP,
+    gap: spacing.xl,
   },
   coverWrap: {
     width: COVER_W,
     height: COVER_H,
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+    ...shadow.card,
   },
   infoCol: {
     flex: 1,
     height: COVER_H,
     justifyContent: 'space-between',
   },
-  title: { color: '#1a1a1a', fontSize: 22, fontWeight: '700', lineHeight: 28 },
-  subtitle: { color: '#5a5a5a', fontSize: 14, lineHeight: 19 },
-  metadata: { color: '#9C9C9C', fontSize: 12, lineHeight: 17 },
+  title: { ...typography.title, fontSize: 22, lineHeight: 28, color: colors.text },
+  subtitle: { color: colors.textMuted, fontSize: 14, lineHeight: 19 },
+  metadata: { color: colors.textSubtle, fontSize: 12, lineHeight: 17 },
   statusPill: {
     alignSelf: 'flex-start',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    borderColor: colors.text,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
-  statusPillText: { color: '#1a1a1a', fontSize: 12 },
+  statusPillText: { color: colors.text, fontSize: 12 },
 
   // 三个统计 — cover 正下方，gap = HERO_TO_STATS_GAP
   statsRow: {
@@ -330,30 +328,26 @@ const styles = StyleSheet.create({
   // Content area — 上方与 stats 留 STATS_TO_NOTES_GAP
   contentWrap: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     paddingTop: STATS_TO_NOTES_GAP,
   },
   listScroll: { flex: 1 },
-  listContent: { paddingTop: 8, paddingBottom: 32 },
+  listContent: { paddingTop: spacing.sm, paddingBottom: spacing.xxxl },
 
-  error: { paddingHorizontal: 12, color: '#c0392b', fontSize: 13, marginTop: 4 },
-  empty: { color: '#999', fontSize: 14, padding: 20, textAlign: 'center' },
+  error: { paddingHorizontal: spacing.md, color: colors.danger, fontSize: 13, marginTop: spacing.xs },
+  empty: { color: colors.textSubtle, fontSize: 14, padding: spacing.xl, textAlign: 'center' },
 
   // Menu
-  menuBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center' },
+  menuBackdrop: { flex: 1, backgroundColor: colors.backdrop, justifyContent: 'center', alignItems: 'center' },
   menuPanel: {
     width: 240,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    paddingVertical: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md + 2,
+    paddingVertical: spacing.xs + 2,
+    ...shadow.floating,
   },
-  menuItem: { paddingVertical: 14, paddingHorizontal: 20 },
-  menuItemText: { fontSize: 16, color: '#222', textAlign: 'center' },
-  menuItemDanger: { color: '#e74c3c' },
-  menuDivider: { height: 1, backgroundColor: '#f0f0f0', marginHorizontal: 10 },
+  menuItem: { paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl },
+  menuItemText: { ...typography.body, fontSize: 16, color: colors.text, textAlign: 'center' },
+  menuItemDanger: { color: colors.danger },
+  menuDivider: { height: 1, backgroundColor: colors.border, marginHorizontal: spacing.sm + 2 },
 });
