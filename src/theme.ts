@@ -1,8 +1,21 @@
+import { Platform, StyleSheet } from 'react-native';
+
 /**
  * Design tokens — single source of truth for colors, spacing, radius, type, shadow.
  * Page bg uses a warm off-white (米白) with off-black text. Primary is a desaturated
  * leaf green (CTA, progress, success). Accent is a cool blue reserved for text links
  * and link-style actions. Never use accent as a filled button.
+ *
+ * Typography uses two Noto SC families for native Chinese + Latin + mixed rendering:
+ *   - SERIF (Noto Serif SC)  — display / title / heading; editorial weight
+ *   - SANS  (Noto Sans SC)   — body / caption / micro / label; readable UI text
+ * Italic emphasis uses the SERIF family too. Each fontFamily references a specific
+ * weight via post-script name; loading happens once in `src/app/_layout.tsx` via
+ * `useFonts` from expo-font with assets from `@expo-google-fonts/noto-serif-sc`
+ * and `@expo-google-fonts/noto-sans-sc`.
+ *
+ * If a font file fails to load (offline, asset missing), React Native silently
+ * falls back to platform default; the post-script name strings still validate.
  */
 
 export const colors = {
@@ -84,15 +97,107 @@ export const shadow = {
   },
 } as const;
 
-export const typography = {
-  display: { fontSize: 28, fontWeight: '700', lineHeight: 36 },
-  title: { fontSize: 22, fontWeight: '700', lineHeight: 28 },
-  heading: { fontSize: 17, fontWeight: '600', lineHeight: 24 },
-  subheading: { fontSize: 16, fontWeight: '600', lineHeight: 22 },
-  body: { fontSize: 15, lineHeight: 24 },          // ~1.6
-  bodyStrong: { fontSize: 15, fontWeight: '600', lineHeight: 22 },
-  caption: { fontSize: 13, lineHeight: 19 },
-  micro: { fontSize: 11, fontWeight: '500', lineHeight: 14 },
+/**
+ * Post-script names registered with useFonts. Match these to the weight token
+ * so React Native picks the right face. We keep platform.select shim so the
+ * strings exist on web (where RNW maps them via CSS) too.
+ */
+export const fontFamily = {
+  serifRegular: 'NotoSerifSC_400Regular',
+  serifMedium: 'NotoSerifSC_500Medium',
+  serifSemiBold: 'NotoSerifSC_600SemiBold',
+  serifBold: 'NotoSerifSC_700Bold',
+  sansRegular: 'NotoSansSC_400Regular',
+  sansMedium: 'NotoSansSC_500Medium',
+  sansSemiBold: 'NotoSansSC_600SemiBold',
+  sansBold: 'NotoSansSC_700Bold',
 } as const;
+
+export const typography = {
+  /** Editorial hero text — book titles, big stats, calendar month */
+  display: {
+    fontFamily: fontFamily.serifBold,
+    fontSize: 32,
+    fontWeight: '700' as const,
+    lineHeight: 40,
+    letterSpacing: -0.5,
+  },
+  /** Section / card header — book detail title, sub-screen headers */
+  title: {
+    fontFamily: fontFamily.serifBold,
+    fontSize: 22,
+    fontWeight: '700' as const,
+    lineHeight: 30,
+    letterSpacing: -0.2,
+  },
+  /** In-card title — list rows, sheet headers */
+  heading: {
+    fontFamily: fontFamily.serifSemiBold,
+    fontSize: 18,
+    fontWeight: '600' as const,
+    lineHeight: 26,
+  },
+  /** Sans subhead — dialog titles, button labels where weight carries */
+  subheading: {
+    fontFamily: fontFamily.sansSemiBold,
+    fontSize: 15,
+    fontWeight: '600' as const,
+    lineHeight: 22,
+  },
+  /** Reading body — note content, comments. Generous line-height for editorial feel */
+  body: {
+    fontFamily: fontFamily.sansRegular,
+    fontSize: 16,
+    fontWeight: '400' as const,
+    lineHeight: 26, // 1.625 ratio
+  },
+  /** Inline emphasis inside body — titles, link text in cards */
+  bodyStrong: {
+    fontFamily: fontFamily.sansSemiBold,
+    fontSize: 15,
+    fontWeight: '600' as const,
+    lineHeight: 22,
+  },
+  /** Secondary text — dates, metadata, helper */
+  caption: {
+    fontFamily: fontFamily.sansRegular,
+    fontSize: 13,
+    fontWeight: '400' as const,
+    lineHeight: 19,
+  },
+  /** Micro labels — chips, badges. Sans medium so digits remain tabular */
+  micro: {
+    fontFamily: fontFamily.sansMedium,
+    fontSize: 11,
+    fontWeight: '500' as const,
+    lineHeight: 14,
+    letterSpacing: 0.4,
+  },
+  /** Editorial section label — UPPERCASE, tracked. Use for section dividers. */
+  label: {
+    fontFamily: fontFamily.sansSemiBold,
+    fontSize: 11,
+    fontWeight: '600' as const,
+    lineHeight: 14,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase' as const,
+  },
+  /** Editorial italic — for quoted passages inside notes. Serif for character. */
+  emphasis: {
+    fontFamily: fontFamily.serifRegular,
+    fontStyle: 'italic' as const,
+    fontSize: 16,
+    fontWeight: '400' as const,
+    lineHeight: 26,
+  },
+} as const;
+
+/** Hairline divider — single-pixel bottom border at the page's border tone */
+export const hairline = StyleSheet.create({
+  divider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+});
 
 export const hitSlop = { top: 8, bottom: 8, left: 8, right: 8 } as const;
