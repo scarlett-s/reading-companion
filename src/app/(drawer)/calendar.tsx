@@ -7,7 +7,7 @@ import { getEntriesByMonth, getAllBooks, getAllEntries } from '@/db';
 import { shareText } from '@/share';
 import { openDrawer } from '@/drawerControl';
 import { Book, ReadingEntry } from '@/types';
-import { formatProgress, tsToDate } from '@/utils';
+import { formatProgress, tsToDate, segmentQuotes } from '@/utils';
 import { entryProgress } from '@/stats';
 import { Pressable } from '@/components/Pressable';
 import { colors, spacing, radius, typography, shadow } from '@/theme';
@@ -477,7 +477,13 @@ export default function CalendarScreen() {
                         )}
                         {!!e.comment && (
                           <Text style={styles.noteComment} numberOfLines={3}>
-                            {e.comment}
+                            {segmentQuotes(e.comment).map((seg, i) =>
+                              seg.quote ? (
+                                <Text key={i} style={styles.quote}>{seg.text}</Text>
+                              ) : (
+                                seg.text
+                              )
+                            )}
                           </Text>
                         )}
                       </View>
@@ -816,6 +822,7 @@ const styles = StyleSheet.create({
   noteDate: { fontSize: 12, color: colors.textSubtle },
   noteProgress: { ...typography.body, fontSize: 14, color: colors.text, fontWeight: '600' },
   noteComment: { fontSize: 13, color: colors.textMuted, lineHeight: 19 },
+  quote: { fontStyle: 'italic', color: colors.textMuted },
 
   empty: { fontSize: 13, color: colors.textSubtle, marginTop: spacing.xs },
 

@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { ReadingEntry } from '@/types';
+import { segmentQuotes } from '@/utils';
 import { Pressable } from '@/components/Pressable';
 import { colors, spacing, radius, typography, shadow } from '@/theme';
 
@@ -74,7 +75,13 @@ function TimelineNoteCard({
         <Text style={styles.cardDate}>{createdDate}</Text>
       </View>
       <Text style={styles.cardBody} numberOfLines={4}>
-        {entry.comment}
+        {segmentQuotes(entry.comment).map((seg, i) =>
+          seg.quote ? (
+            <Text key={i} style={styles.quote}>{seg.text}</Text>
+          ) : (
+            seg.text
+          )
+        )}
       </Text>
       <View style={styles.cardFooter}>
         <Text style={styles.expandText}>展开</Text>
@@ -130,10 +137,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
+  quote: {
+    fontStyle: 'italic',
+    color: colors.textMuted,
+  },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    marginTop: 2,
+    marginTop: spacing.sm,
   },
   expandText: {
     color: colors.primary,
