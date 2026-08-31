@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   meta: { color: colors.textSubtle, fontSize: 13, marginTop: -spacing.lg },
 
   section: { gap: spacing.md - 2 },
-  sectionTitle: { ...typography.caption, fontSize: 13, color: colors.textMuted, fontWeight: '600' },
+  sectionTitle: { ...typography.label, color: colors.textMuted },
   group: { backgroundColor: colors.surface, borderRadius: radius.md + 2, overflow: 'hidden' },
 
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.lg - 2, paddingHorizontal: spacing.lg, gap: spacing.md },

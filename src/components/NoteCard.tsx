@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { ReadingEntry } from '@/types';
-import { formatProgress, segmentTags } from '@/utils';
+import { formatProgress, segmentTags, segmentQuotes } from '@/utils';
 import { Pressable } from '@/components/Pressable';
 import { colors, spacing, radius, typography, shadow } from '@/theme';
 
@@ -173,14 +173,18 @@ export default function NoteCard({
         {progress ? <Text style={styles.progress}>{progress}</Text> : null}
 
         <Text style={styles.comment} numberOfLines={expanded ? undefined : 4}>
-          {segmentTags(comment).map((seg, i) =>
-            seg.tag ? (
-              <Text key={i} style={styles.tagInline}>
-                {seg.text}
-              </Text>
-            ) : (
-              seg.text
-            )
+          {segmentTags(comment).flatMap((seg, i) =>
+            seg.tag
+              ? [<Text key={i} style={styles.tagInline}>{seg.text}</Text>]
+              : segmentQuotes(seg.text).map((q, j) =>
+                  q.quote ? (
+                    <Text key={`${i}-${j}`} style={styles.quote}>
+                      {q.text}
+                    </Text>
+                  ) : (
+                    q.text
+                  )
+                )
           )}
         </Text>
 
@@ -226,6 +230,10 @@ const styles = StyleSheet.create({
   menuBtn: { paddingHorizontal: spacing.xs, paddingVertical: spacing.xs / 2 },
   progress: { fontSize: 13, color: colors.accent },
   comment: { fontSize: 15, lineHeight: 27, color: colors.text },
+  quote: {
+    fontStyle: 'italic',
+    color: colors.textMuted,
+  },
   tagInline: {
     color: '#3B6B2E',
     backgroundColor: '#EFF3E8',
@@ -239,10 +247,10 @@ const styles = StyleSheet.create({
   summary: { backgroundColor: colors.surfaceMuted, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
   summaryLabel: { ...typography.micro, color: colors.textSubtle, fontSize: 12 },
   summaryText: { fontSize: 14, lineHeight: 21 },
-  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm },
   expandText: { fontSize: 14, color: colors.accent, fontWeight: '500' },
   aiWrap: {},
-  aiBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 9 },
+  aiBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 9 },
   aiAvailable: { backgroundColor: colors.primary },
   aiUsed: { backgroundColor: colors.borderStrong },
   aiText: { fontSize: 12, color: colors.primaryText, fontWeight: '700' },

@@ -187,6 +187,7 @@ export default function BookDetailScreen() {
               {!!subtitle && <Text style={styles.subtitle} numberOfLines={2}>{subtitle}</Text>}
               {!!metadata && <Text style={styles.metadata} numberOfLines={3}>{metadata}</Text>}
               <View style={styles.statusPill}>
+                <View style={styles.statusPillBar} />
                 <Text style={styles.statusPillText}>{statusLabel}</Text>
               </View>
               <StarRating value={book.rating ?? 0} onChange={rate} size={16} activeColor={colors.gold} inactiveColor={colors.borderStrong} />
@@ -311,14 +312,13 @@ const styles = StyleSheet.create({
   metadata: { color: colors.textSubtle, fontSize: 12, lineHeight: 17 },
   statusPill: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.text,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     paddingVertical: spacing.xs,
   },
-  statusPillText: { color: colors.text, fontSize: 12 },
+  statusPillBar: { width: 2, height: 14, borderRadius: 1, backgroundColor: colors.primary },
+  statusPillText: { color: colors.textMuted, fontSize: 12 },
 
   // 三个统计 — cover 正下方，gap = HERO_TO_STATS_GAP
   statsRow: {

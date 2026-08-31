@@ -41,8 +41,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm },
   btn: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: colors.accent,
+    backgroundColor: colors.surface,
     borderRadius: radius.md,
     paddingVertical: spacing.sm + 2,
     alignItems: 'center',

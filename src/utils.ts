@@ -35,6 +35,33 @@ export interface TagSegment {
   tag: boolean;
 }
 
+export interface QuoteSegment {
+  text: string;
+  quote: boolean;
+}
+
+/**
+ * 把正文按配对的中文「」引号切成段落。quote 段含首尾引号（「xxx」），
+ * 非 quote 段为普通文本。供卡片把引文应用 italic editorial 样式。
+ *
+ * 规则：开括号「后到下一个匹配闭括号」之前的全部内容（含两个引号），
+ * 作为一段 quote；其余作为普通段。嵌套未做特殊处理，遇见第一个」即闭合。
+ * ASCII 双引号 " 也支持，用于英文引文。
+ */
+export function segmentQuotes(text: string): QuoteSegment[] {
+  const re = /「[^」]*」|"[^"]*"/g;
+  const segments: QuoteSegment[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) segments.push({ text: text.slice(last, m.index), quote: false });
+    segments.push({ text: m[0], quote: true });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) segments.push({ text: text.slice(last), quote: false });
+  return segments;
+}
+
 /**
  * 把正文按 #标签 切成段落：tag 段含 '#'（如 '#哲学'），非 tag 段为普通文本。
  * 规则：# 前有空格（或位于行首）、后跟非空白字符，直到空格/行尾结束。

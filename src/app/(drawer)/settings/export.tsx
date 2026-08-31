@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: spacing.lg, gap: spacing.lg },
   hint: { fontSize: 13, color: colors.textMuted, lineHeight: 19 },
-  sectionTitle: { ...typography.subheading, marginTop: spacing.sm },
+  sectionTitle: { ...typography.label, color: colors.textMuted, marginTop: spacing.sm },
   diagBtn: {
     backgroundColor: colors.text,
     borderRadius: 12,

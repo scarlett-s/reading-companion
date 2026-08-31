@@ -193,8 +193,6 @@ const styles = StyleSheet.create({
   searchRow: { flexDirection: 'row', gap: spacing.sm },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
