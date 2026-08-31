@@ -6,16 +6,12 @@ import { Platform, StyleSheet } from 'react-native';
  * leaf green (CTA, progress, success). Accent is a cool blue reserved for text links
  * and link-style actions. Never use accent as a filled button.
  *
- * Typography uses two Noto SC families for native Chinese + Latin + mixed rendering:
- *   - SERIF (Noto Serif SC)  — display / title / heading; editorial weight
- *   - SANS  (Noto Sans SC)   — body / caption / micro / label; readable UI text
- * Italic emphasis uses the SERIF family too. Each fontFamily references a specific
- * weight via post-script name; loading happens once in `src/app/_layout.tsx` via
- * `useFonts` from expo-font with assets from `@expo-google-fonts/noto-serif-sc`
- * and `@expo-google-fonts/noto-sans-sc`.
- *
- * If a font file fails to load (offline, asset missing), React Native silently
- * falls back to platform default; the post-script name strings still validate.
+ * Typography uses a single family — Noto Sans SC — for Chinese, English and mixed
+ * CJK/Latin text. Editorial feel comes from size hierarchy, weight contrast,
+ * italic emphasis, and tracked UPPERCASE labels, NOT from a serif/sans pair
+ * (mixed families looked inconsistent across the app). Fonts are loaded once in
+ * `src/app/_layout.tsx` via `useFonts` from expo-font with assets from
+ * `@expo-google-fonts/noto-sans-sc`.
  */
 
 export const colors = {
@@ -99,24 +95,24 @@ export const shadow = {
 
 /**
  * Post-script names registered with useFonts. Match these to the weight token
- * so React Native picks the right face. We keep platform.select shim so the
- * strings exist on web (where RNW maps them via CSS) too.
+ * so React Native picks the right face. Single-family system — Sans covers
+ * Chinese (SC subset) and Latin glyphs, so no per-language fallback chain.
+ *
+ * Noto Sans SC ships these weights: 100, 300, 400, 500, 700, 900. No 600
+ * SemiBold. We use 500 Medium as the "strong" weight between 400 (body) and
+ * 700 (display). For 11px UPPERCASE tracked labels the heavier weight reads
+ * better, so label uses Bold.
  */
 export const fontFamily = {
-  serifRegular: 'NotoSerifSC_400Regular',
-  serifMedium: 'NotoSerifSC_500Medium',
-  serifSemiBold: 'NotoSerifSC_600SemiBold',
-  serifBold: 'NotoSerifSC_700Bold',
   sansRegular: 'NotoSansSC_400Regular',
   sansMedium: 'NotoSansSC_500Medium',
-  sansSemiBold: 'NotoSansSC_600SemiBold',
   sansBold: 'NotoSansSC_700Bold',
 } as const;
 
 export const typography = {
-  /** Editorial hero text — book titles, big stats, calendar month */
+  /** Hero text — calendar month, big stats. Size + weight carry the hierarchy. */
   display: {
-    fontFamily: fontFamily.serifBold,
+    fontFamily: fontFamily.sansBold,
     fontSize: 32,
     fontWeight: '700' as const,
     lineHeight: 40,
@@ -124,24 +120,25 @@ export const typography = {
   },
   /** Section / card header — book detail title, sub-screen headers */
   title: {
-    fontFamily: fontFamily.serifBold,
+    fontFamily: fontFamily.sansBold,
     fontSize: 22,
     fontWeight: '700' as const,
     lineHeight: 30,
     letterSpacing: -0.2,
   },
-  /** In-card title — list rows, sheet headers */
+  /** In-card title — list rows, sheet headers. Medium (not Bold) so it sits
+   *  lighter than title and heavier than body. */
   heading: {
-    fontFamily: fontFamily.serifSemiBold,
+    fontFamily: fontFamily.sansMedium,
     fontSize: 18,
-    fontWeight: '600' as const,
+    fontWeight: '500' as const,
     lineHeight: 26,
   },
   /** Sans subhead — dialog titles, button labels where weight carries */
   subheading: {
-    fontFamily: fontFamily.sansSemiBold,
+    fontFamily: fontFamily.sansMedium,
     fontSize: 15,
-    fontWeight: '600' as const,
+    fontWeight: '500' as const,
     lineHeight: 22,
   },
   /** Reading body — note content, comments. Generous line-height for editorial feel */
@@ -153,9 +150,9 @@ export const typography = {
   },
   /** Inline emphasis inside body — titles, link text in cards */
   bodyStrong: {
-    fontFamily: fontFamily.sansSemiBold,
+    fontFamily: fontFamily.sansMedium,
     fontSize: 15,
-    fontWeight: '600' as const,
+    fontWeight: '500' as const,
     lineHeight: 22,
   },
   /** Secondary text — dates, metadata, helper */
@@ -173,18 +170,20 @@ export const typography = {
     lineHeight: 14,
     letterSpacing: 0.4,
   },
-  /** Editorial section label — UPPERCASE, tracked. Use for section dividers. */
+  /** Editorial section label — UPPERCASE, tracked. Bold at small size reads
+   *  as a sharp editorial divider. */
   label: {
-    fontFamily: fontFamily.sansSemiBold,
+    fontFamily: fontFamily.sansBold,
     fontSize: 11,
-    fontWeight: '600' as const,
+    fontWeight: '700' as const,
     lineHeight: 14,
     letterSpacing: 1.5,
     textTransform: 'uppercase' as const,
   },
-  /** Editorial italic — for quoted passages inside notes. Serif for character. */
+  /** Italic emphasis — for quoted passages inside notes. Italic sans keeps the
+   *  family consistent while still flagging quoted / cited text. */
   emphasis: {
-    fontFamily: fontFamily.serifRegular,
+    fontFamily: fontFamily.sansRegular,
     fontStyle: 'italic' as const,
     fontSize: 16,
     fontWeight: '400' as const,

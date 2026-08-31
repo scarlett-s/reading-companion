@@ -4,37 +4,25 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
-  NotoSerifSC_400Regular,
-  NotoSerifSC_500Medium,
-  NotoSerifSC_600SemiBold,
-  NotoSerifSC_700Bold,
-} from '@expo-google-fonts/noto-serif-sc';
-import {
   NotoSansSC_400Regular,
   NotoSansSC_500Medium,
-  NotoSansSC_600SemiBold,
   NotoSansSC_700Bold,
 } from '@expo-google-fonts/noto-sans-sc';
 import { initDatabase } from '@/db';
 import { backfillEmbeddings } from '@/embedding';
 
-// Prevent the splash screen from auto-hiding until the Noto fonts are loaded,
-// so the user does not see the platform default font flash before the editorial
-// type ramp kicks in. Wrapped in try/catch because the SDK can throw on web when
-// the splash screen module is unavailable.
+// Prevent the splash screen from auto-hiding until Noto Sans SC is loaded,
+// so the user does not see the platform default font flash before the
+// unified sans typography kicks in. Wrapped in try/catch because the SDK
+// can throw on web when the splash screen module is unavailable.
 SplashScreen.preventAutoHideAsync().catch(() => {
   /* splash not available (e.g. web) — ignore */
 });
 
 export default function RootLayout() {
   const [fontsLoaded, fontsError] = useFonts({
-    NotoSerifSC_400Regular,
-    NotoSerifSC_500Medium,
-    NotoSerifSC_600SemiBold,
-    NotoSerifSC_700Bold,
     NotoSansSC_400Regular,
     NotoSansSC_500Medium,
-    NotoSansSC_600SemiBold,
     NotoSansSC_700Bold,
   });
 
