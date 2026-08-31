@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { Pressable } from '@/components/Pressable';
 import { colors } from '@/theme';
 
@@ -19,7 +20,12 @@ export default function StarRating({
     <View style={styles.row}>
       {[1, 2, 3, 4, 5].map((i) => (
         <Pressable key={i} onPress={() => onChange?.(i)} hitSlop={6}>
-          <Text style={[styles.star, { color: i <= value ? activeColor : inactiveColor, fontSize: size, lineHeight: size * 1.1 }]}>★</Text>
+          <SymbolView
+            name={i <= value ? 'star.fill' : 'star'}
+            size={size}
+            tintColor={i <= value ? activeColor : inactiveColor}
+            type="monochrome"
+          />
         </Pressable>
       ))}
     </View>
@@ -28,5 +34,4 @@ export default function StarRating({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 6 },
-  star: {},
 });

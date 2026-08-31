@@ -33,6 +33,7 @@ export const colors = {
   primary: '#7CB342',
   primaryPressed: '#6FA13A',
   primaryText: '#FFFFFF',
+  primaryTint: '#F4FAF1',     // faint green wash for selected / active rows
 
   // Accent (links / link-style actions only — never filled CTA)
   accent: '#208AEF',

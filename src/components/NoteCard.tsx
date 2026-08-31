@@ -121,13 +121,13 @@ export default function NoteCard({
             value={draftComment}
             onChangeText={setDraftComment}
             placeholder="现在的想法"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textSubtle}
             multiline
             autoFocus
             textAlignVertical="top"
             scrollEnabled={false}
-            selectionColor="#208AEF"
-            cursorColor="#208AEF"
+            selectionColor={colors.accent}
+            cursorColor={colors.accent}
           />
         </View>
 

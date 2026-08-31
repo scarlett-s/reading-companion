@@ -9,6 +9,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { tsToDateTime } from '@/utils';
 import { ReadingEntry } from '@/types';
 import { getAllEntries, getAllBooks, getLinksForEntry, addLink, removeLink, deleteEntry } from '@/db';
@@ -162,7 +163,7 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
                   value={linkQuery}
                   onChangeText={setLinkQuery}
                   placeholder="搜索笔记 / 书名"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.textSubtle}
                   autoCorrect={false}
                 />
               </View>
@@ -185,7 +186,9 @@ export default function NoteMenu({ entry, visible, anchor, cardRight, onClose, o
                           {o.comment}
                         </Text>
                       </View>
-                      {linkedIds.has(o.id) && <Text style={styles.linkCheck}>✓</Text>}
+                      {linkedIds.has(o.id) && (
+                        <SymbolView name="checkmark" size={16} tintColor={colors.primary} type="monochrome" />
+                      )}
                     </Pressable>
                   ))
                 )}
@@ -248,10 +251,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  linkItemLinked: { backgroundColor: '#F4FAF1' },
+  linkItemLinked: { backgroundColor: colors.primaryTint },
   linkText: { flex: 1 },
   linkTitle: { ...typography.body, fontSize: 14, fontWeight: '500' },
   linkComment: { ...typography.micro, fontSize: 12, color: colors.textSubtle, marginTop: 2, lineHeight: 17 },
-  linkCheck: { fontSize: 16, color: colors.primary, fontWeight: '700' },
   empty: { color: colors.textSubtle, fontSize: 13, padding: spacing.xl, textAlign: 'center' },
 });

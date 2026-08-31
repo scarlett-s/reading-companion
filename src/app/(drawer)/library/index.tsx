@@ -58,7 +58,7 @@ export default function LibraryScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder="搜索书库内图书"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textSubtle}
             autoCorrect={false}
             returnKeyType="search"
           />

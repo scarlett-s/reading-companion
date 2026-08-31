@@ -1,6 +1,7 @@
-import { Text, TextStyle, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { colors } from '@/theme';
 
-/** 轻量线框图标：unicode 几何符号 + 文本样式控制粗细/大小，零依赖 */
+/** 工具栏图标：SF Symbols 单色符号，替代 unicode/emoji 字符，跨端渲染一致 */
 
 type IconName =
   | 'bold'
@@ -12,44 +13,25 @@ type IconName =
   | 'send'
   | 'check';
 
-const GLYPH: Record<IconName, string> = {
-  bold: 'B',
-  italic: 'I',
-  underline: 'U',
-  list: '☰',
-  hash: '#',
-  image: '🖼',
-  send: '➤',
-  check: '✓',
+const SYMBOL: Record<IconName, React.ComponentProps<typeof SymbolView>['name']> = {
+  bold: 'bold',
+  italic: 'italic',
+  underline: 'underline',
+  list: 'list.bullet',
+  hash: 'number',
+  image: 'photo',
+  send: 'paperplane',
+  check: 'checkmark',
 };
 
 export function Icon({
   name,
   size = 18,
-  color = '#222',
-  style,
+  color = colors.text,
 }: {
   name: IconName;
   size?: number;
   color?: string;
-  style?: TextStyle;
 }) {
-  return (
-    <Text
-      style={[
-        styles.base,
-        {
-          fontSize: size,
-          color,
-          lineHeight: size + 4,
-        },
-        style,
-      ]}>
-      {GLYPH[name]}
-    </Text>
-  );
+  return <SymbolView name={SYMBOL[name]} size={size} tintColor={color} type="monochrome" />;
 }
-
-const styles = StyleSheet.create({
-  base: { fontWeight: '500' },
-});
